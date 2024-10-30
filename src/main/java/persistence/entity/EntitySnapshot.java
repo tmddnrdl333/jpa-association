@@ -1,7 +1,7 @@
 package persistence.entity;
 
-import persistence.sql.Queryable;
-import persistence.sql.definition.TableDefinition;
+import persistence.sql.definition.ColumnDefinitionAware;
+import persistence.sql.definition.EntityTableMapper;
 
 import java.util.HashMap;
 import java.util.List;
@@ -9,27 +9,32 @@ import java.util.Map;
 import java.util.Objects;
 
 public class EntitySnapshot {
-    private final TableDefinition tableDefinition;
     private final Map<String, Object> columnSnapshots = new HashMap<>();
 
     public EntitySnapshot(Object entity) {
-        tableDefinition = new TableDefinition(entity.getClass());
-        final List<? extends Queryable> columns = tableDefinition.withoutIdColumns();
-        for (Queryable column : columns) {
-            columnSnapshots.put(column.getColumnName(), getNullableValue(entity, column));
+        final EntityTableMapper entityMapper = new EntityTableMapper(entity);
+        final List<? extends ColumnDefinitionAware> columns = entityMapper.getColumnDefinitions();
+        for (ColumnDefinitionAware column : columns) {
+            final Object value = getNullableValue(column, entityMapper);
+            columnSnapshots.put(column.getDatabaseColumnName(), value);
         }
     }
 
-    private static Object getNullableValue(Object entity, Queryable column) {
-        return column.hasValue(entity) ? column.getValueWithQuoted(entity) : null;
+    private static Object getNullableValue(ColumnDefinitionAware column, EntityTableMapper entityMapper) {
+        return entityMapper.hasValue(column) ? quoted(entityMapper.getValue(column)) : null;
+    }
+
+    private static String quoted(Object value) {
+        return value instanceof String ? "'" + value + "'" : value.toString();
     }
 
     public boolean hasDirtyColumns(Object managedEntity) {
-        final List<? extends Queryable> columns = tableDefinition.withoutIdColumns();
+        final EntityTableMapper entityMapper = new EntityTableMapper(managedEntity);
+        final List<? extends ColumnDefinitionAware> columns = entityMapper.getColumnDefinitions();
         return columns.stream()
                 .anyMatch(column -> {
-                            final Object entityValue = getNullableValue(managedEntity, column);
-                            final Object snapshotValue = this.columnSnapshots.get(column.getColumnName());
+                            final Object entityValue = getNullableValue(column, entityMapper);
+                            final Object snapshotValue = this.columnSnapshots.get(column.getDatabaseColumnName());
                             return !Objects.equals(entityValue, snapshotValue);
                         }
                 );

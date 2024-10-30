@@ -1,14 +1,15 @@
 package persistence.entity;
 
+import jdbc.EntityRowMapper;
 import jdbc.JdbcTemplate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import persistence.sql.definition.EntityTableMapper;
 import persistence.sql.definition.TableDefinition;
 import persistence.sql.dml.query.SelectQueryBuilder;
 
+import java.util.Collection;
+
 public class EntityLoader {
     private final JdbcTemplate jdbcTemplate;
-    private final Logger logger = LoggerFactory.getLogger(EntityLoader.class);
 
     public EntityLoader(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
@@ -24,13 +25,26 @@ public class EntityLoader {
             }
         });
 
-        final String query = queryBuilder.build(entityKey.id());
-        logger.info("Executing custom select query: {}", query);
+        final String query = queryBuilder.buildById(entityKey.id());
 
         final Object queried = jdbcTemplate.queryForObject(query,
                 new EntityRowMapper<>(entityKey.entityClass())
         );
 
         return entityClass.cast(queried);
+    }
+
+    public <T> Collection<T> loadLazyCollection(Class<T> targetClass, EntityTableMapper ownerTableMapper) {
+        final SelectQueryBuilder queryBuilder = new SelectQueryBuilder(targetClass);
+        final String joinColumnName = ownerTableMapper.getJoinColumnName(targetClass);
+        final Object value = ownerTableMapper.getValue(joinColumnName);
+
+        final String query = queryBuilder
+                .where(joinColumnName, value.toString())
+                .build();
+
+        return jdbcTemplate.query(query,
+                new EntityRowMapper<>(targetClass)
+        );
     }
 }

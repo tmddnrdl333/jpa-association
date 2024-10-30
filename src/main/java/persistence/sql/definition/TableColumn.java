@@ -1,67 +1,46 @@
 package persistence.sql.definition;
 
-import persistence.sql.Dialect;
-import persistence.sql.Queryable;
+import jakarta.persistence.Id;
 import persistence.sql.SqlType;
 
 import java.lang.reflect.Field;
 
-public class TableColumn implements Queryable {
+public class TableColumn implements ColumnDefinitionAware {
     private final ColumnDefinition columnDefinition;
+    private final boolean isPrimaryKey;
 
     public TableColumn(Field field) {
         this.columnDefinition = new ColumnDefinition(field);
+        this.isPrimaryKey = field.isAnnotationPresent(Id.class);
     }
 
     @Override
-    public void applyToCreateTableQuery(StringBuilder query, Dialect dialect) {
-        final String type = dialect.translateType(columnDefinition);
-        query.append(columnDefinition.getColumnName()).append(" ").append(type);
-
-        if (columnDefinition.isNotNullable()) {
-            query.append(" NOT NULL");
-        }
-
-        query.append(", ");
-    }
-
-    @Override
-    public boolean hasValue(Object entity) {
-        return columnDefinition.hasValue(entity);
-    }
-
-    @Override
-    public String getValueWithQuoted(Object entity) {
-        final Object value = columnDefinition.getValue(entity);
-
-        if (value instanceof String) {
-            return "'" + value + "'";
-        }
-
-        return value.toString();
-    }
-
-    @Override
-    public Object getValue(Object entity) {
-        return columnDefinition.getValue(entity);
-    }
-
-    @Override
-    public String getColumnName() {
+    public String getDatabaseColumnName() {
         return columnDefinition.getColumnName();
     }
 
     @Override
-    public String getDeclaredName() {
+    public String getEntityFieldName() {
         return columnDefinition.getDeclaredName();
     }
 
+    @Override
+    public boolean isNullable() {
+        return columnDefinition.isNullable();
+    }
+
+    @Override
+    public int getLength() {
+        return columnDefinition.getLength();
+    }
+
+    @Override
     public SqlType getSqlType() {
         return columnDefinition.getSqlType();
     }
 
-    public ColumnDefinition getColumnDefinition() {
-        return columnDefinition;
+    @Override
+    public boolean isPrimaryKey() {
+        return isPrimaryKey;
     }
-
 }

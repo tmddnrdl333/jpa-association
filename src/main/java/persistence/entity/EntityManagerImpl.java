@@ -1,22 +1,21 @@
 package persistence.entity;
 
-import common.ReflectionFieldAccessUtils;
 import jdbc.JdbcTemplate;
-import persistence.sql.definition.TableDefinition;
 
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.function.Supplier;
 
 public class EntityManagerImpl implements EntityManager {
     private final PersistenceContext persistenceContext;
-    private final EntityPersister entityPersister;
+    private final JdbcTemplate jdbcTemplate;
     private final EntityLoader entityLoader;
 
     public EntityManagerImpl(JdbcTemplate jdbcTemplate,
                              PersistenceContext persistenceContext) {
 
         this.persistenceContext = persistenceContext;
-        this.entityPersister = new EntityPersister(jdbcTemplate);
+        this.jdbcTemplate = jdbcTemplate;
         this.entityLoader = new EntityLoader(jdbcTemplate);
     }
 
@@ -50,13 +49,14 @@ public class EntityManagerImpl implements EntityManager {
 
     @Override
     public void persist(Object entity) {
-        if (entityPersister.hasId(entity)) {
+        final EntityPersister entityPersister = new EntityPersister(entity, jdbcTemplate);
+        if (entityPersister.hasId()) {
             final EntityEntry entityEntry = persistenceContext.getEntityEntry(
-                    new EntityKey(entityPersister.getEntityId(entity), entity.getClass())
+                    new EntityKey(entityPersister.getEntityId(), entity.getClass())
             );
 
             if (entityEntry == null) {
-                throw new IllegalArgumentException("No Entity Entry with id: " + entityPersister.getEntityId(entity));
+                throw new IllegalArgumentException("No Entity Entry with id: " + entityPersister.getEntityId());
             }
 
             if (entityEntry.isManaged()) {
@@ -66,19 +66,41 @@ public class EntityManagerImpl implements EntityManager {
             throw new IllegalArgumentException("Entity already persisted");
         }
 
+        saveEntity(entity, entityPersister);
+    }
+
+    private void saveEntity(Object entity, EntityPersister entityPersister) {
         final EntityEntry entityEntry = EntityEntry.inSaving();
 
         entityPersister.insert(entity);
-        final EntityKey entityKey = new EntityKey(entityPersister.getEntityId(entity), entity.getClass());
+        final EntityKey entityKey = new EntityKey(entityPersister.getEntityId(), entity.getClass());
         addEntityInContext(entityKey, entity);
         addManagedEntityEntry(entityKey, entityEntry);
 
-        manageChildEntity(entity);
+        saveChildEntity(entityPersister, entity);
+    }
+
+    private void saveChildEntity(EntityPersister entityPersister, Object entity) {
+        final Collection<Object> childCollections = entityPersister.getChildCollections(entity);
+
+        if (childCollections.isEmpty()) {
+            return;
+        }
+
+        childCollections.forEach(childEntity -> {
+            if (childEntity != null) {
+                final EntityPersister childEntityPersister = new EntityPersister(childEntity, jdbcTemplate);
+                if (!childEntityPersister.hasId()) {
+                    saveEntity(childEntity, childEntityPersister);
+                }
+            }
+        });
     }
 
     @Override
     public void remove(Object entity) {
-        final EntityKey entityKey = new EntityKey(entityPersister.getEntityId(entity), entity.getClass());
+        final EntityPersister entityPersister = new EntityPersister(entity, jdbcTemplate);
+        final EntityKey entityKey = new EntityKey(entityPersister.getEntityId(), entity.getClass());
         final EntityEntry entityEntry = persistenceContext.getEntityEntry(entityKey);
         checkManagedEntity(entity, entityEntry);
 
@@ -89,7 +111,8 @@ public class EntityManagerImpl implements EntityManager {
 
     @Override
     public <T> T merge(T entity) {
-        final EntityKey entityKey = new EntityKey(entityPersister.getEntityId(entity), entity.getClass());
+        final EntityPersister entityPersister = new EntityPersister(entity, jdbcTemplate);
+        final EntityKey entityKey = new EntityKey(entityPersister.getEntityId(), entity.getClass());
         final EntityEntry entityEntry = persistenceContext.getEntityEntry(entityKey);
         checkManagedEntity(entity, entityEntry);
 
@@ -130,29 +153,4 @@ public class EntityManagerImpl implements EntityManager {
         persistenceContext.addEntry(entityKey, entityEntry);
     }
 
-    private void manageChildEntity(Object entity) {
-        TableDefinition tableDefinition = entityPersister.getTableDefinition(entity);
-        tableDefinition.getAssociations().forEach(association -> {
-            final Class<?> associationClass = association.getAssociatedEntityClass();
-            try {
-                Object associationField = ReflectionFieldAccessUtils.accessAndGet(entity, tableDefinition.getEntityClass().getDeclaredField(association.getFieldName()));
-                if (associationField == null) {
-                    return;
-                }
-
-                if (associationField instanceof Iterable<?> iterable) {
-                    iterable.forEach(childEntity -> {
-                        if (childEntity != null && entityPersister.hasId(childEntity)) {
-                            final EntityKey entityKey = new EntityKey(entityPersister.getEntityId(childEntity), associationClass);
-                            addEntityInContext(entityKey, childEntity);
-                            addManagedEntityEntry(entityKey, new EntityEntry(Status.MANAGED, entityKey.id()));
-                        }
-                    });
-                }
-            } catch (NoSuchFieldException e) {
-                // logging
-                throw new RuntimeException(e);
-            }
-        });
-    }
 }

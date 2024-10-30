@@ -6,7 +6,7 @@ import persistence.sql.definition.TableId;
 public class AutoKeyGenerationStrategy implements PrimaryKeyGenerationStrategy {
 
     @Override
-    public String generatePrimaryKeySQL(TableId pk) {
+    public String generatePrimaryKeySQL() {
         return "";
     }
 

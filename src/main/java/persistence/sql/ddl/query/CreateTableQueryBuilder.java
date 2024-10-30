@@ -1,59 +1,69 @@
 package persistence.sql.ddl.query;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import common.SqlLogger;
 import persistence.sql.Dialect;
-import persistence.sql.definition.ColumnDefinition;
+import persistence.sql.definition.ColumnDefinitionAware;
 import persistence.sql.definition.TableDefinition;
 import persistence.sql.definition.TableId;
 
+import java.util.List;
+
 public class CreateTableQueryBuilder {
     private final StringBuilder query;
-    private final Logger logger = LoggerFactory.getLogger(CreateTableQueryBuilder.class);
+    private final Dialect dialect;
 
     public CreateTableQueryBuilder(
             Dialect dialect,
             Class<?> entityClass,
-            Class<?> parentClass
+            List<ColumnDefinitionAware> additionalColumns
     ) {
-        this.query = new StringBuilder();
-
         TableDefinition tableDefinition = new TableDefinition(entityClass);
+        this.query = new StringBuilder();
+        this.dialect = dialect;
 
         query.append("CREATE TABLE ").append(tableDefinition.getTableName());
         query.append(" (");
 
-        tableDefinition.withIdColumns().forEach(column -> column.applyToCreateTableQuery(query, dialect));
-        if (parentClass != null) {
-            TableDefinition parentTableDefinition = new TableDefinition(parentClass);
-            parentTableDefinition.getAssociations().forEach(association -> {
-                if (association.getAssociatedEntityClass().equals(entityClass)) {
-                    if (association.getJoinColumnName() != null) {
-                        query.append(association.getJoinColumnName() + " " + dialect.translateType(
-                                getColumnDefinition(parentTableDefinition, association.getJoinColumnName())
-                        ) + ", ");
-                    }
-                }
-            });
-
-        }
+        columnClause(tableDefinition.getTableId(), tableDefinition.getColumns());
+        additionalColumns.forEach(column -> {
+            appendColumn(column);
+            query.append(", ");
+        });
 
         definePrimaryKey(tableDefinition.getTableId(), query);
 
         query.append(");");
     }
 
-    private ColumnDefinition getColumnDefinition(TableDefinition parentTableDefinition, String joinColumnName) {
-        return parentTableDefinition.getColumn(joinColumnName).getColumnDefinition();
+    private void columnClause(TableId tableId, List<? extends ColumnDefinitionAware> columns) {
+        for (ColumnDefinitionAware column : columns) {
+            appendColumn(column);
+            if (column.isPrimaryKey()) {
+                query.append(tableId.generatePrimaryKeySQL());
+            }
+            query.append(", ");
+        }
+    }
+
+    private void appendColumn(ColumnDefinitionAware columnDefinition) {
+        final String type = dialect.translateType(columnDefinition);
+
+        query.append(columnDefinition.getDatabaseColumnName())
+                .append(" ")
+                .append(type);
+
+        if (!columnDefinition.isNullable()) {
+            query.append(" NOT NULL");
+        }
     }
 
     public String build() {
         final String sql = query.toString();
-        logger.info("Generated Create Table SQL: {}", sql);
+        SqlLogger.infoCreateTable(sql);
         return sql;
     }
 
     private void definePrimaryKey(TableId pk, StringBuilder query) {
-        query.append("PRIMARY KEY (").append(pk.getColumnName()).append(")");
+        query.append("PRIMARY KEY (").append(pk.getDatabaseColumnName()).append(")");
     }
 }

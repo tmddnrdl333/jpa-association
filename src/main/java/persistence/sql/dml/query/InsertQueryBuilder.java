@@ -1,43 +1,46 @@
 package persistence.sql.dml.query;
 
-import persistence.sql.Queryable;
-import persistence.sql.definition.TableDefinition;
+import common.SqlLogger;
+import persistence.sql.definition.ColumnDefinitionAware;
+import persistence.sql.definition.EntityTableMapper;
 
 import java.util.List;
 
-public class InsertQueryBuilder {
+public class InsertQueryBuilder implements BaseQueryBuilder {
     private static final String EMPTY_STRING = "";
 
     public String build(Object entity) {
         final StringBuilder query = new StringBuilder();
-        final Class<?> entityClass = entity.getClass();
-        final TableDefinition tableDefinition = new TableDefinition(entityClass);
-        final List<? extends Queryable> targetColumns = tableDefinition.hasValueColumns(entity);
+        final EntityTableMapper entityTableMapper = new EntityTableMapper(entity);
+        final List<? extends ColumnDefinitionAware> columns = entityTableMapper.hasValueColumns();
 
         query.append("INSERT INTO ");
-        query.append(tableDefinition.getTableName());
+        query.append(entityTableMapper.getTableName());
 
         query.append(" (");
-        query.append(columnsClause(targetColumns));
+        query.append(columnsClause(columns));
 
         query.append(") VALUES (");
-        query.append(valueClause(entity, targetColumns));
+        query.append(valueClause(entityTableMapper, columns));
         query.append(");");
-        return query.toString();
+
+        final String sql = query.toString();
+        SqlLogger.infoInsert(sql);
+        return sql;
     }
 
-    private String columnsClause(List<? extends Queryable> targetColumns) {
-        return targetColumns
+    private String columnsClause(List<? extends ColumnDefinitionAware> columns) {
+        return columns
                 .stream()
-                .map(Queryable::getColumnName)
+                .map(ColumnDefinitionAware::getDatabaseColumnName)
                 .reduce((column1, column2) -> column1 + ", " + column2)
                 .orElse(EMPTY_STRING);
     }
 
-    private String valueClause(Object object, List<? extends Queryable> targetColumns) {
-        return targetColumns
+    private String valueClause(EntityTableMapper mapper, List<? extends ColumnDefinitionAware> columns) {
+        return mapper.getValues(columns)
                 .stream()
-                .map(column -> column.getValueWithQuoted(object))
+                .map(this::getQuoted)
                 .reduce((value1, value2) -> value1 + ", " + value2)
                 .orElse(EMPTY_STRING);
     }

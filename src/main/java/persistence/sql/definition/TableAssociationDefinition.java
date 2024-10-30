@@ -5,22 +5,24 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
+import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 public class TableAssociationDefinition {
     private final TableDefinition associatedTableDefinition;
-    private JoinColumn joinColumn;
+    private final JoinColumn joinColumn;
     private final FetchType fetchType;
     private final String fieldName;
 
-    public TableAssociationDefinition(
-            Class<?> associatedEntityClass,
-            Field field) {
+    public TableAssociationDefinition(Field field) {
         this.joinColumn = field.getAnnotation(JoinColumn.class);
-        this.associatedTableDefinition = new TableDefinition(associatedEntityClass);
+        this.associatedTableDefinition = new TableDefinition(getGenericActualType(field));
         this.fieldName = field.getName();
         this.fetchType = getFetchType(field);
     }
@@ -37,12 +39,16 @@ public class TableAssociationDefinition {
         return FetchType.EAGER;
     }
 
-    public TableDefinition getAssociatedTableDefinition() {
-        return associatedTableDefinition;
+    @NotNull
+    private static Class<?> getGenericActualType(Field field) {
+        final Type genericType = field.getGenericType();
+        final Type[] actualTypeArguments = ((ParameterizedType) genericType).getActualTypeArguments();
+
+        return (Class<?>) actualTypeArguments[0];
     }
 
-    public Class<?> getAssociatedEntityClass() {
-        return associatedTableDefinition.getEntityClass();
+    public TableDefinition getAssociatedTableDefinition() {
+        return associatedTableDefinition;
     }
 
     public String getFieldName() {
@@ -55,6 +61,10 @@ public class TableAssociationDefinition {
 
     public boolean isFetchEager() {
         return fetchType == FetchType.EAGER;
+    }
+
+    public boolean isFetchLazy() {
+        return fetchType == FetchType.LAZY;
     }
 
     public String getJoinColumnName() {
@@ -73,5 +83,14 @@ public class TableAssociationDefinition {
         }
 
         return entityCollection;
+    }
+
+    public void setCollectionField(Object instance, List collection) throws NoSuchFieldException {
+        final Field field = instance.getClass().getDeclaredField(getFieldName());
+        ReflectionFieldAccessUtils.accessAndSet(instance, field, collection);
+    }
+
+    public Class<?> getEntityClass() {
+        return associatedTableDefinition.getEntityClass();
     }
 }

@@ -25,6 +25,7 @@ public class Order {
     private String orderNumber;
 
     @OneToMany(fetch = FetchType.EAGER)
+//    @OneToMany(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id")
     private List<OrderItem> orderItems = new ArrayList<>();
 
@@ -32,6 +33,11 @@ public class Order {
     }
 
     public Order(String orderNumber) {
+        this.orderNumber = orderNumber;
+    }
+
+    public Order(Long id, String orderNumber) {
+        this.id = id;
         this.orderNumber = orderNumber;
     }
 

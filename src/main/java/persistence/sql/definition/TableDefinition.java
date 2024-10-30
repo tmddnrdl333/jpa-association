@@ -2,43 +2,41 @@ package persistence.sql.definition;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import org.jetbrains.annotations.NotNull;
-import persistence.sql.Queryable;
 
-import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Stream;
 
 public class TableDefinition {
 
-    private final String tableName;
     private final Class<?> entityClass;
-    private final List<TableColumn> columns;
-    private final List<TableAssociationDefinition> associations;
+    private final String tableName;
     private final TableId tableId;
+    private final List<? extends ColumnDefinitionAware> columns;
+    private final List<TableAssociationDefinition> associations;
 
     public TableDefinition(Class<?> entityClass) {
-        validate(entityClass);
+        validateEntityAnnotationPresent(entityClass);
+        validateHasOneId(entityClass);
 
-        final Field[] fields = entityClass.getDeclaredFields();
-
-        this.tableName = determineTableName(entityClass);
         this.entityClass = entityClass;
-        this.associations = determineAssociations(entityClass);
-        this.columns = createTableColumns(fields);
-        this.tableId = new TableId(fields);
+        this.tableName = getDatabaseTableName(entityClass);
+        this.tableId = new TableId(entityClass);
+        this.associations = createAssociations(entityClass);
+        this.columns = createTableColumns(entityClass);
     }
 
-    @NotNull
-    private static List<TableAssociationDefinition> determineAssociations(Class<?> entityClass) {
+    private static List<TableAssociationDefinition> createAssociations(Class<?> entityClass) {
         final List<Field> collectionFields = Arrays.stream(entityClass.getDeclaredFields())
+                .filter(TableDefinition::isAssociationAnnotationPresent)
                 .filter(field -> Collection.class.isAssignableFrom(field.getType()))
                 .toList();
 
@@ -47,20 +45,20 @@ public class TableDefinition {
         }
 
         return collectionFields.stream()
-                .map(field -> new TableAssociationDefinition(getGenericActualType(field), field))
+                .map(TableAssociationDefinition::new)
                 .toList();
     }
 
-    @NotNull
-    private static Class<?> getGenericActualType(Field field) {
-        final Type genericType = field.getGenericType();
-        final Type[] actualTypeArguments = ((ParameterizedType) genericType).getActualTypeArguments();
-
-        return (Class<?>) actualTypeArguments[0];
+    private static boolean isAssociationAnnotationPresent(Field field) {
+        return field.isAnnotationPresent(OneToMany.class)
+                || field.isAnnotationPresent(ManyToMany.class)
+                || field.isAnnotationPresent(jakarta.persistence.OneToOne.class)
+                || field.isAnnotationPresent(jakarta.persistence.ManyToOne.class);
     }
 
+
     @NotNull
-    private static String determineTableName(Class<?> entityClass) {
+    private static String getDatabaseTableName(Class<?> entityClass) {
         final String tableName = entityClass.getSimpleName();
 
         if (entityClass.isAnnotationPresent(Table.class)) {
@@ -80,25 +78,22 @@ public class TableDefinition {
         return tableName;
     }
 
-    private static List<TableColumn> createTableColumns(Field[] fields) {
-        return Arrays.stream(fields)
-                .filter(field -> !field.isAnnotationPresent(Id.class))
+    private static List<? extends ColumnDefinitionAware> createTableColumns(Class<?> entityClass) {
+        return Arrays.stream(entityClass.getDeclaredFields())
                 .filter(field -> !field.isAnnotationPresent(Transient.class))
                 .filter(field -> !Collection.class.isAssignableFrom(field.getType()))
                 .map(TableColumn::new)
                 .toList();
     }
 
-    public void validate(Class<?> clazz) {
+    private void validateEntityAnnotationPresent(Class<?> clazz) {
         if (!clazz.isAnnotationPresent(Entity.class)) {
             throw new IllegalArgumentException("Entity must be annotated with @Entity");
         }
-
-        validateHasId(clazz.getDeclaredFields());
     }
 
-    private void validateHasId(Field[] fields) {
-        List<Field> idFields = Arrays.stream(fields)
+    private void validateHasOneId(Class<?> entityClass) {
+        List<Field> idFields = Arrays.stream(entityClass.getDeclaredFields())
                 .filter(field ->
                         field.isAnnotationPresent(Id.class)
                 ).toList();
@@ -108,42 +103,16 @@ public class TableDefinition {
         }
     }
 
-    public Class<?> getEntityClass() {
-        return entityClass;
-    }
-
     public TableId getTableId() {
         return tableId;
-    }
-
-    public Serializable getIdValue(Object entity) {
-        return (Serializable) tableId.getValue(entity);
-    }
-
-    public boolean hasId(Object entity) {
-        return tableId.hasValue(entity);
     }
 
     public String getTableName() {
         return tableName;
     }
 
-    public List<? extends Queryable> withIdColumns() {
-        return Stream.concat(
-                        Stream.of(tableId),
-                        columns.stream()
-                )
-                .toList();
-    }
-
-    public List<? extends Queryable> withoutIdColumns() {
+    public List<? extends ColumnDefinitionAware> getColumns() {
         return columns;
-    }
-
-    public List<? extends Queryable> hasValueColumns(Object entity) {
-        return withIdColumns().stream()
-                .filter(column -> column.hasValue(entity))
-                .toList();
     }
 
     public List<TableAssociationDefinition> getAssociations() {
@@ -154,15 +123,30 @@ public class TableDefinition {
         return !associations.isEmpty();
     }
 
-    public boolean hasColumn(String name) {
-        return columns.stream()
-                .anyMatch(column -> column.getColumnName().equals(name));
+    public Class<?> getEntityClass() {
+        return entityClass;
     }
 
-    public Queryable getColumn(String name) {
-        return withIdColumns().stream()
-                .filter(column -> column.getColumnName().equals(name))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Column not found"));
+    public String getIdColumnName() {
+        return tableId.getDatabaseColumnName();
+    }
+
+    public TableAssociationDefinition getAssociation(Class<?> associatedEntityClass) {
+        for (TableAssociationDefinition association : getAssociations()) {
+            if (association.getEntityClass().equals(associatedEntityClass)) {
+                return association;
+            }
+        }
+
+        return null;
+    }
+
+    public String getJoinColumnName(Class<?> associatedEntityClass) {
+        final TableAssociationDefinition association = getAssociation(associatedEntityClass);
+        return association.getJoinColumnName();
+    }
+
+    public String getIdFieldName() {
+        return tableId.getEntityFieldName();
     }
 }

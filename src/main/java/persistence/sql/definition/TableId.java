@@ -3,8 +3,7 @@ package persistence.sql.definition;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import persistence.sql.Dialect;
-import persistence.sql.Queryable;
+import persistence.sql.SqlType;
 import persistence.sql.ddl.query.AutoKeyGenerationStrategy;
 import persistence.sql.ddl.query.IdentityKeyGenerationStrategy;
 import persistence.sql.ddl.query.PrimaryKeyGenerationStrategy;
@@ -12,10 +11,8 @@ import persistence.sql.ddl.query.PrimaryKeyGenerationStrategy;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
-public class TableId implements Queryable {
-
+public class TableId implements ColumnDefinitionAware {
     private static final List<PrimaryKeyGenerationStrategy> pkGenerationStrategies = List.of(
             new AutoKeyGenerationStrategy(),
             new IdentityKeyGenerationStrategy()
@@ -25,7 +22,8 @@ public class TableId implements Queryable {
     private final ColumnDefinition columnDefinition;
     private final PrimaryKeyGenerationStrategy strategy;
 
-    public TableId(Field[] fields) {
+    public TableId(Class<?> entityClass) {
+        final Field[] fields = entityClass.getDeclaredFields();
         final Field pkField = Arrays.stream(fields)
                 .filter(field -> field.isAnnotationPresent(Id.class))
                 .findFirst()
@@ -54,54 +52,41 @@ public class TableId implements Queryable {
                 .orElseThrow(() -> new IllegalStateException("Unsupported primary key generation strategy"));
     }
 
+    public String generatePrimaryKeySQL() {
+        return strategy.generatePrimaryKeySQL();
+    }
+
     public GenerationType generationType() {
         return generationType;
     }
 
     @Override
-    public String getColumnName() {
+    public String getDatabaseColumnName() {
         return columnDefinition.getColumnName();
     }
 
     @Override
-    public String getDeclaredName() {
+    public String getEntityFieldName() {
         return columnDefinition.getDeclaredName();
     }
 
     @Override
-    public void applyToCreateTableQuery(StringBuilder query, Dialect dialect) {
-        final String type = dialect.translateType(columnDefinition);
-        query.append(columnDefinition.getColumnName()).append(" ").append(type);
-
-        if (columnDefinition.isNotNullable()) {
-            query.append(" NOT NULL");
-        }
-
-        query.append(" ").append(strategy.generatePrimaryKeySQL(this)).append(", ");
+    public boolean isNullable() {
+        return false;
     }
 
     @Override
-    public boolean hasValue(Object entity) {
-        return columnDefinition.hasValue(entity) && !Objects.equals(getValueWithQuoted(entity), "0");
+    public int getLength() {
+        return columnDefinition.getLength();
     }
 
     @Override
-    public String getValueWithQuoted(Object entity) {
-        final Object value = columnDefinition.getValue(entity);
-
-        if (value instanceof String) {
-            return "'" + value + "'";
-        }
-
-        return value.toString();
+    public SqlType getSqlType() {
+        return columnDefinition.getSqlType();
     }
 
     @Override
-    public Object getValue(Object entity) {
-        return columnDefinition.getValue(entity);
-    }
-
-    public ColumnDefinition getColumnDefinition() {
-        return columnDefinition;
+    public boolean isPrimaryKey() {
+        return true;
     }
 }

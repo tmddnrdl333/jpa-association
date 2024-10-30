@@ -1,6 +1,6 @@
 package persistence.sql;
 
-import persistence.sql.definition.ColumnDefinition;
+import persistence.sql.definition.ColumnDefinitionAware;
 
 import java.util.Map;
 
@@ -12,7 +12,7 @@ public class H2Dialect implements Dialect {
     );
 
     @Override
-    public String translateType(ColumnDefinition columnDefinition) {
+    public String translateType(ColumnDefinitionAware columnDefinition) {
         return switch (columnDefinition.getSqlType()) {
             case VARCHAR -> typeMap.get(SqlType.VARCHAR) + "(" + columnDefinition.getLength() + ")";
             case BIGINT -> typeMap.get(SqlType.BIGINT);

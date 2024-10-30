@@ -1,61 +1,56 @@
 package persistence.sql.dml.query;
 
 import common.AliasRule;
+import common.SqlLogger;
 import persistence.sql.definition.TableAssociationDefinition;
 import persistence.sql.definition.TableDefinition;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.StringJoiner;
 
-public class SelectQueryBuilder {
-
+public class SelectQueryBuilder implements BaseQueryBuilder {
+    private final StringBuilder query = new StringBuilder();
     private final TableDefinition tableDefinition;
     private final List<String> columns = new ArrayList<>();
+    private final Map<String, String> conditions = new HashMap<>();
 
-    private TableAssociationDefinition joinTableDefinition;
+    private TableDefinition joinTableDefinition;
     private final List<String> joinTableColumns = new ArrayList<>();
 
     public SelectQueryBuilder(Class<?> entityClass) {
         final TableDefinition tableDefinition = new TableDefinition(entityClass);
         this.tableDefinition = tableDefinition;
-        tableDefinition.withIdColumns().forEach(column -> {
-                    columns.add(column.getColumnName());
+        tableDefinition.getColumns().forEach(column -> {
+                    columns.add(column.getDatabaseColumnName());
                 }
         );
     }
 
     public SelectQueryBuilder join(TableAssociationDefinition tableAssociationDefinition) {
         final TableDefinition joinTableDefinition = tableAssociationDefinition.getAssociatedTableDefinition();
-        this.joinTableDefinition = tableAssociationDefinition;
-        joinTableDefinition.withIdColumns().forEach(column -> {
-                    joinTableColumns.add(column.getColumnName());
+        this.joinTableDefinition = new TableDefinition(joinTableDefinition.getEntityClass());
+
+        this.joinTableDefinition.getColumns().forEach(column -> {
+                    joinTableColumns.add(column.getDatabaseColumnName());
                 }
         );
         return this;
     }
 
-    public String build(Serializable id) {
-        final StringBuilder query = new StringBuilder("SELECT ");
-        query.append(columnsClause());
-        query.append(" FROM ");
-        query.append(tableDefinition.getTableName());
-        if (joinTableDefinition != null) {
-            query.append(" LEFT JOIN ");
-            query.append(joinTableDefinition.getTableName());
-            query.append(" ON ");
-            query.append(joinTableDefinition.getTableName());
-            query.append(".");
-            query.append(joinTableDefinition.getJoinColumnName());
-            query.append(" = ");
-            query.append(tableDefinition.getTableName());
-            query.append(".");
-            query.append(tableDefinition.getTableId().getColumnName());
-        }
-        whereClause(query, id);
-        query.append(";");
-        return query.toString();
+    public SelectQueryBuilder where(String column, String value) {
+        conditions.put(column, value);
+        return this;
+    }
+
+    private void selectClause() {
+        query.append("SELECT ")
+                .append(columnsClause())
+                .append(" FROM ")
+                .append(tableDefinition.getTableName());
     }
 
     private String columnsClause() {
@@ -74,19 +69,61 @@ public class SelectQueryBuilder {
         return joiner.toString();
     }
 
-    private void whereClause(StringBuilder selectQuery, Serializable id) {
-        selectQuery.append(" WHERE ");
-        selectQuery.append(tableDefinition.getTableName())
-                .append(".")
-                .append(tableDefinition.getTableId().getColumnName())
-                .append(" = ");
+    private void joinClause() {
+        if (joinTableDefinition != null) {
+            query.append(" LEFT JOIN ")
+                    .append(joinTableDefinition.getTableName())
+                    .append(" ON ")
+                    .append(joinTableDefinition.getTableName())
+                    .append(".")
+                    .append(tableDefinition.getJoinColumnName(joinTableDefinition.getEntityClass()))
+                    .append(" = ")
+                    .append(tableDefinition.getTableName())
+                    .append(".")
+                    .append(tableDefinition.getIdColumnName());
+        }
+    }
 
-        if (id instanceof String) {
-            selectQuery.append("'").append(id).append("';");
+    private void whereClause() {
+        if (conditions.isEmpty()) {
             return;
         }
+        final StringJoiner joiner = new StringJoiner(" AND ");
 
-        selectQuery.append(id);
+        query.append(" WHERE ");
+        conditions.forEach((column, value) -> {
+            joiner.add(tableDefinition.getTableName() + "." + column + " = " + getQuoted(value));
+        });
+        query.append(joiner);
+    }
+
+    private void whereByIdClause(Serializable id) {
+        query
+                .append(" WHERE ")
+                .append(tableDefinition.getTableName())
+                .append(".")
+                .append(tableDefinition.getIdColumnName())
+                .append(" = ")
+                .append(getQuoted(id)).append(";");
+    }
+
+    public String buildById(Serializable id) {
+        selectClause();
+        joinClause();
+        whereByIdClause(id);
+
+        final String sql = query.toString();
+        SqlLogger.infoSelect(sql);
+        return sql;
+    }
+
+    public String build() {
+        selectClause();
+        whereClause();
+
+        final String sql = query.toString();
+        SqlLogger.infoSelect(sql);
+        return sql;
     }
 
 }

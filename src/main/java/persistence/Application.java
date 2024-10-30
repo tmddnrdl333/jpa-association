@@ -9,13 +9,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import persistence.entity.EntityManager;
 import persistence.entity.EntityManagerImpl;
-import persistence.entity.EntityRowMapper;
+import jdbc.EntityRowMapper;
 import persistence.entity.PersistenceContextImpl;
 import persistence.sql.H2Dialect;
 import domain.Person;
 import persistence.sql.ddl.query.CreateTableQueryBuilder;
 import persistence.sql.ddl.query.DropQueryBuilder;
-import persistence.sql.definition.TableDefinition;
 import persistence.sql.dml.query.SelectAllQueryBuilder;
 
 import java.util.List;
@@ -34,18 +33,18 @@ public class Application {
             final EntityManager em = new EntityManagerImpl(jdbcTemplate, new PersistenceContextImpl());
 
             CreateTableQueryBuilder createOrder = new CreateTableQueryBuilder(new H2Dialect(), Order.class, null);
-            CreateTableQueryBuilder createOrderItem = new CreateTableQueryBuilder(new H2Dialect(), OrderItem.class, Order.class);
+            CreateTableQueryBuilder createOrderItem = new CreateTableQueryBuilder(new H2Dialect(), OrderItem.class, List.of());
             jdbcTemplate.execute(createOrder.build());
             jdbcTemplate.execute(createOrderItem.build());
 
-            Order order = new Order("123");
-            OrderItem orderItem = new OrderItem("item1", 1);
-            OrderItem orderItem2 = new OrderItem("item2", 2);
-            order.getOrderItems().add(orderItem);
-            order.getOrderItems().add(orderItem2);
-
-            em.persist(order);
-            em.clear();
+//            Order order = new Order("123");
+//            OrderItem orderItem = new OrderItem("item1", 1);
+//            OrderItem orderItem2 = new OrderItem("item2", 2);
+//            order.getOrderItems().add(orderItem);
+//            order.getOrderItems().add(orderItem2);
+//
+//            em.persist(order);
+//            em.clear();
 
             em.find(Order.class, 1L);
             server.stop();

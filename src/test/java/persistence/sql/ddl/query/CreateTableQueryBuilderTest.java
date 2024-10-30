@@ -10,6 +10,8 @@ import persistence.sql.ddl.fixtures.TestEntityWithIdentityIdStrategy;
 import persistence.sql.ddl.fixtures.TestEntityWithNullableColumns;
 import persistence.sql.ddl.fixtures.TestEntityWithTransientColumn;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class CreateTableQueryBuilderTest {
@@ -18,7 +20,7 @@ class CreateTableQueryBuilderTest {
     @Test
     @DisplayName("Should create a CREATE TABLE query")
     void shouldCreateCreateTableQuery() {
-        CreateTableQueryBuilder queryBuilder = new CreateTableQueryBuilder(dialect, Person.class, null);
+        CreateTableQueryBuilder queryBuilder = new CreateTableQueryBuilder(dialect, Person.class, List.of());
         String query = queryBuilder.build();
 
         assertThat(query).isEqualTo(
@@ -29,17 +31,17 @@ class CreateTableQueryBuilderTest {
     @Test
     @DisplayName("Should create create table query for TestEntityWithAutoIdStrategy")
     void shouldCreateCreateTableQueryForEntityWithAutoIdStrategy() {
-        CreateTableQueryBuilder queryBuilder = new CreateTableQueryBuilder(dialect, TestEntityWithAutoIdStrategy.class, null);
+        CreateTableQueryBuilder queryBuilder = new CreateTableQueryBuilder(dialect, TestEntityWithAutoIdStrategy.class, List.of());
         String query = queryBuilder.build();
 
         assertThat(query).isEqualTo(
-                "CREATE TABLE TestEntityWithAutoIdStrategy (id BIGINT , PRIMARY KEY (id));");
+                "CREATE TABLE TestEntityWithAutoIdStrategy (id BIGINT, PRIMARY KEY (id));");
     }
 
     @Test
     @DisplayName("Should create a CREATE TABLE query for TestEntityWithIdentityIdStrategy")
     void shouldCreateCreateTableQueryForEntityWithIdentityIdStrategy() {
-        CreateTableQueryBuilder queryBuilder = new CreateTableQueryBuilder(dialect, TestEntityWithIdentityIdStrategy.class, null);
+        CreateTableQueryBuilder queryBuilder = new CreateTableQueryBuilder(dialect, TestEntityWithIdentityIdStrategy.class, List.of());
         String query = queryBuilder.build();
 
         assertThat(query).isEqualTo(
@@ -50,7 +52,7 @@ class CreateTableQueryBuilderTest {
     @Test
     @DisplayName("Should create a CREATE TABLE query for TestEntityWithNullableColumns")
     void shouldCreateCreateTableQueryForNullableTestEntity() {
-        CreateTableQueryBuilder queryBuilder = new CreateTableQueryBuilder(dialect, TestEntityWithNullableColumns.class, null);
+        CreateTableQueryBuilder queryBuilder = new CreateTableQueryBuilder(dialect, TestEntityWithNullableColumns.class, List.of());
         String query = queryBuilder.build();
 
         assertThat(query).isEqualTo(
@@ -61,7 +63,7 @@ class CreateTableQueryBuilderTest {
     @Test
     @DisplayName("Should create a CREATE TABLE query for TestEntityWithTransientColumn")
     void shouldCreateCreateTableQueryForTransientTestEntity() {
-        CreateTableQueryBuilder queryBuilder = new CreateTableQueryBuilder(dialect, TestEntityWithTransientColumn.class, null);
+        CreateTableQueryBuilder queryBuilder = new CreateTableQueryBuilder(dialect, TestEntityWithTransientColumn.class, List.of());
 
         // When
         String query = queryBuilder.build();

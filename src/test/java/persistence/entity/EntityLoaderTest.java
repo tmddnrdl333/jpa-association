@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 class EntityLoaderTest {
 
     @Entity
-    private static class EntityLoaderTestEntity1 {
+    public static class EntityLoaderTestEntity1 {
         @Id
         private Long id;
 
@@ -40,7 +40,7 @@ class EntityLoaderTest {
     }
 
     @Entity
-    private static class EntityLoaderTestEntity2 {
+    public static class EntityLoaderTestEntity2 {
         @Id
         private Long id;
 
@@ -66,8 +66,8 @@ class EntityLoaderTest {
         Dialect dialect = new H2Dialect();
         JdbcTemplate jdbcTemplate = new JdbcTemplate(server.getConnection());
 
-        String createTestEntity1TableQuery = new CreateTableQueryBuilder(dialect, EntityLoaderTestEntity1.class, null).build();
-        String createTestEntity2TableQuery = new CreateTableQueryBuilder(dialect, EntityLoaderTestEntity2.class, null).build();
+        String createTestEntity1TableQuery = new CreateTableQueryBuilder(dialect, EntityLoaderTestEntity1.class, List.of()).build();
+        String createTestEntity2TableQuery = new CreateTableQueryBuilder(dialect, EntityLoaderTestEntity2.class, List.of()).build();
 
         jdbcTemplate.execute(createTestEntity1TableQuery);
         jdbcTemplate.execute(createTestEntity2TableQuery);
@@ -95,9 +95,11 @@ class EntityLoaderTest {
         EntityLoaderTestEntity1 entity1 = new EntityLoaderTestEntity1(1L, 30);
         EntityLoaderTestEntity1 entity2 = new EntityLoaderTestEntity1(2L, 40);
 
-        EntityPersister entityPersister = new EntityPersister(jdbcTemplate);
-        entityPersister.insert(entity1);
-        entityPersister.insert(entity2);
+        EntityPersister entity1Persister = new EntityPersister(entity1, jdbcTemplate);
+        EntityPersister entity2Persister = new EntityPersister(entity2, jdbcTemplate);
+
+        entity1Persister.insert(entity1);
+        entity2Persister.insert(entity2);
 
         EntityKey entityKey1 = new EntityKey(1L, EntityLoaderTestEntity1.class);
         EntityKey entityKey2 = new EntityKey(2L, EntityLoaderTestEntity1.class);
@@ -124,9 +126,10 @@ class EntityLoaderTest {
         EntityLoaderTestEntity2 entity1 = new EntityLoaderTestEntity2(1L, "John");
         EntityLoaderTestEntity2 entity2 = new EntityLoaderTestEntity2(2L, "Jane");
 
-        EntityPersister entityPersister = new EntityPersister(jdbcTemplate);
-        entityPersister.insert(entity1);
-        entityPersister.insert(entity2);
+        EntityPersister entityPersister1 = new EntityPersister(entity1, jdbcTemplate);
+        EntityPersister entityPersister2 = new EntityPersister(entity2, jdbcTemplate);
+        entityPersister1.insert(entity1);
+        entityPersister2.insert(entity2);
 
         EntityKey entityKey1 = new EntityKey(1L, EntityLoaderTestEntity2.class);
         EntityKey entityKey2 = new EntityKey(2L, EntityLoaderTestEntity2.class);

@@ -14,13 +14,19 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import persistence.sql.H2Dialect;
+import persistence.sql.SqlType;
 import persistence.sql.ddl.query.CreateTableQueryBuilder;
 import persistence.sql.ddl.query.DropQueryBuilder;
+import persistence.sql.definition.ColumnDefinitionAware;
+import persistence.sql.definition.EntityTableMapper;
 import persistence.sql.definition.TableDefinition;
 
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -29,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class EntityManagerTest {
 
     @Entity
-    private static class EntityManagerTestEntityWithIdentityId {
+    public static class EntityManagerTestEntityWithIdentityId {
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
         private Long id;
@@ -61,12 +67,39 @@ public class EntityManagerTest {
         server = new H2();
         server.start();
 
-        String query = new CreateTableQueryBuilder(new H2Dialect(), EntityManagerTestEntityWithIdentityId.class, null).build();
-        String query2 = new CreateTableQueryBuilder(new H2Dialect(), Order.class, null).build();
+        String query = new CreateTableQueryBuilder(new H2Dialect(), EntityManagerTestEntityWithIdentityId.class, List.of()).build();
+        String query2 = new CreateTableQueryBuilder(new H2Dialect(), Order.class, List.of()).build();
+        String query3 = new CreateTableQueryBuilder(new H2Dialect(), OrderItem.class, Collections.singletonList(new ColumnDefinitionAware() {
+            @Override
+            public String getDatabaseColumnName() {
+                return "order_id";
+            }
 
-        TableDefinition tableDefinition = new TableDefinition(Order.class);
+            @Override
+            public String getEntityFieldName() {
+                return "id";
+            }
 
-        String query3 = new CreateTableQueryBuilder(new H2Dialect(), OrderItem.class, Order.class).build();
+            @Override
+            public boolean isNullable() {
+                return true;
+            }
+
+            @Override
+            public int getLength() {
+                return 0;
+            }
+
+            @Override
+            public SqlType getSqlType() {
+                return SqlType.BIGINT;
+            }
+
+            @Override
+            public boolean isPrimaryKey() {
+                return false;
+            }
+        })).build();
 
         jdbcTemplate = new JdbcTemplate(server.getConnection());
         jdbcTemplate.execute(query);
@@ -276,6 +309,27 @@ public class EntityManagerTest {
                 () -> assertThat(persistedOrder.getOrderItems().get(1).getProduct()).isEqualTo("product2"),
                 () -> assertThat(persistedOrder.getOrderItems().get(1).getQuantity()).isEqualTo(2)
         );
+    }
+
+    @Test
+    @DisplayName("em.findAll test")
+    void testFindAll() throws SQLException {
+        EntityManager em = new EntityManagerImpl(new JdbcTemplate(server.getConnection()), new PersistenceContextImpl());
+        Order order = new Order("order_number");
+        OrderItem orderItem1 = new OrderItem("product1", 1);
+        OrderItem orderItem2 = new OrderItem("product2", 2);
+
+
+        order.getOrderItems().add(orderItem1);
+        order.getOrderItems().add(orderItem2);
+
+        em.persist(order);
+        em.clear();
+
+        EntityLoader el = new EntityLoader(jdbcTemplate);
+        Collection<OrderItem> orderItems = el.loadLazyCollection(OrderItem.class, new EntityTableMapper(order));
+        assertThat(orderItems).hasSize(2);
+
     }
 
     public static void printAllRowsAndColumns(ResultSet resultSet) throws SQLException {

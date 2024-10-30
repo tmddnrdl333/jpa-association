@@ -1,7 +1,7 @@
 package persistence.sql;
 
-import persistence.sql.definition.ColumnDefinition;
+import persistence.sql.definition.ColumnDefinitionAware;
 
 public interface Dialect {
-    String translateType(ColumnDefinition columnDefinition);
+    String translateType(ColumnDefinitionAware columnDefinition);
 }

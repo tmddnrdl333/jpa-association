@@ -1,13 +1,9 @@
 package persistence.sql.definition;
 
-import common.ReflectionFieldAccessUtils;
 import jakarta.persistence.Column;
-import org.jetbrains.annotations.NotNull;
 import persistence.sql.SqlType;
 
 import java.lang.reflect.Field;
-import java.util.NoSuchElementException;
-import java.util.Optional;
 
 public class ColumnDefinition {
     private static final int DEFAULT_LENGTH = 255;
@@ -68,10 +64,6 @@ public class ColumnDefinition {
         return sqlType;
     }
 
-    public boolean isNotNullable() {
-        return !nullable;
-    }
-
     public int getLength() {
         return length;
     }
@@ -82,37 +74,5 @@ public class ColumnDefinition {
 
     public String getDeclaredName() {
         return declaredName;
-    }
-
-    public boolean hasValue(Object entity) {
-        final Field[] declaredFields = entity.getClass().getDeclaredFields();
-        final Field targetField = getMatchingField(declaredFields);
-
-        return findValueFromObject(entity, targetField).isPresent();
-    }
-
-    public Object getValue(Object entity) {
-        final Field[] declaredFields = entity.getClass().getDeclaredFields();
-        final Field targetField = getMatchingField(declaredFields);
-
-        return findValueFromObject(entity, targetField)
-                .orElseThrow(() -> new NoSuchElementException("Value is null"));
-    }
-
-    private Field getMatchingField(Field[] declaredFields) {
-        for (Field field : declaredFields) {
-            if (field.getName().equals(getDeclaredName())) {
-                return field;
-            }
-        }
-
-        throw new NoSuchElementException("Field not found");
-    }
-
-    @NotNull
-    private Optional<Object> findValueFromObject(Object entity, Field field) {
-        return Optional.ofNullable(
-                ReflectionFieldAccessUtils.accessAndGet(entity, field)
-        );
     }
 }

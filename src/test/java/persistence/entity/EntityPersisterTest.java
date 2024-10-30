@@ -2,7 +2,11 @@ package persistence.entity;
 
 import database.DatabaseServer;
 import database.H2;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 import jdbc.JdbcTemplate;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class EntityPersisterTest {
 
     @Entity
-    private static class QueryTestEntityWithIdentityId {
+    public static class QueryTestEntityWithIdentityId {
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
         private Long id;
@@ -45,10 +49,6 @@ class EntityPersisterTest {
             this.age = age;
         }
 
-        public QueryTestEntityWithIdentityId(String name, Integer age) {
-            this.name = name;
-            this.age = age;
-        }
     }
 
     private static DatabaseServer server;
@@ -60,7 +60,7 @@ class EntityPersisterTest {
         server.start();
 
         jdbcTemplate = new JdbcTemplate(server.getConnection());
-        String query2 = new CreateTableQueryBuilder(new H2Dialect(), QueryTestEntityWithIdentityId.class, null).build();
+        String query2 = new CreateTableQueryBuilder(new H2Dialect(), QueryTestEntityWithIdentityId.class, List.of()).build();
         jdbcTemplate.execute(query2);
     }
 
@@ -76,14 +76,10 @@ class EntityPersisterTest {
     void testGetEntityId() {
         QueryTestEntityWithIdentityId entityWithId1 = new QueryTestEntityWithIdentityId(1L);
         QueryTestEntityWithIdentityId entityWithId0 = new QueryTestEntityWithIdentityId(0L);
-        QueryTestEntityWithIdentityId entityWithNullId = new QueryTestEntityWithIdentityId(null);
-
-        EntityPersister persister = new EntityPersister(jdbcTemplate);
 
         assertAll(
-                () -> assertThat(persister.getEntityId(entityWithId1)).isEqualTo(1L),
-                () -> assertThat(persister.getEntityId(entityWithId0)).isEqualTo(0L),
-                () -> assertThat(persister.getEntityId(entityWithNullId)).isEqualTo(0L)
+                () -> assertThat(new EntityPersister(entityWithId1, jdbcTemplate).getEntityId()).isEqualTo(1L),
+                () -> assertThat(new EntityPersister(entityWithId0, jdbcTemplate).getEntityId()).isEqualTo(0L)
         );
     }
 
@@ -91,7 +87,7 @@ class EntityPersisterTest {
     @DisplayName("identity 전략 + id값이 null인 경우 정상적으로 insert되어야 한다.")
     void testInsert() {
         QueryTestEntityWithIdentityId entity = new QueryTestEntityWithIdentityId(null, "John", 25);
-        EntityPersister persister = new EntityPersister(jdbcTemplate);
+        EntityPersister persister = new EntityPersister(entity, jdbcTemplate);
 
         persister.insert(entity);
 
@@ -107,7 +103,7 @@ class EntityPersisterTest {
     @Test
     void shouldExecuteInsertWithNullValue() {
         QueryTestEntityWithIdentityId entity = new QueryTestEntityWithIdentityId(1L);
-        EntityPersister persister = new EntityPersister(jdbcTemplate);
+        EntityPersister persister = new EntityPersister(entity, jdbcTemplate);
 
         persister.insert(entity);
 
@@ -123,7 +119,7 @@ class EntityPersisterTest {
     @Test
     void shouldExecuteUpdate() {
         QueryTestEntityWithIdentityId entity = new QueryTestEntityWithIdentityId(1L, "John", 25);
-        EntityPersister persister = new EntityPersister(jdbcTemplate);
+        EntityPersister persister = new EntityPersister(entity, jdbcTemplate);
         persister.insert(entity);
 
         QueryTestEntityWithIdentityId updatedEntity = new QueryTestEntityWithIdentityId(1L, "Chanho", 30);
@@ -143,7 +139,7 @@ class EntityPersisterTest {
     @Test
     void shouldExecuteDelete() {
         QueryTestEntityWithIdentityId entity = new QueryTestEntityWithIdentityId(1L);
-        EntityPersister persister = new EntityPersister(jdbcTemplate);
+        EntityPersister persister = new EntityPersister(entity, jdbcTemplate);
 
         persister.insert(entity);
         persister.delete(entity);
