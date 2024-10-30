@@ -9,8 +9,8 @@ import org.junit.jupiter.api.Test;
 import persistence.dialect.H2Dialect;
 import persistence.fixture.EntityWithId;
 import persistence.fixture.EntityWithOnlyId;
-import persistence.sql.ddl.CreateQueryBuilder;
-import persistence.sql.ddl.DropQueryBuilder;
+import persistence.sql.ddl.CreateQuery;
+import persistence.sql.ddl.DropQuery;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -192,8 +192,8 @@ class DefaultEntityManagerTest {
     }
 
     private void createTable() {
-        final CreateQueryBuilder createQueryBuilder = new CreateQueryBuilder(EntityWithId.class, new H2Dialect());
-        jdbcTemplate.execute(createQueryBuilder.create());
+        final CreateQuery createQuery = new CreateQuery(EntityWithId.class, new H2Dialect());
+        jdbcTemplate.execute(createQuery.create());
     }
 
     private void insertData(EntityWithId entity, EntityManager entityManager) {
@@ -201,7 +201,7 @@ class DefaultEntityManagerTest {
     }
 
     private void dropTable() {
-        final DropQueryBuilder dropQueryBuilder = new DropQueryBuilder(EntityWithId.class);
-        jdbcTemplate.execute(dropQueryBuilder.drop());
+        final DropQuery dropQuery = new DropQuery(EntityWithId.class);
+        jdbcTemplate.execute(dropQuery.drop());
     }
 }

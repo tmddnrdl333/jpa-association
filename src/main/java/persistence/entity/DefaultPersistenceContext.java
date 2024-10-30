@@ -1,8 +1,8 @@
 package persistence.entity;
 
 import jdbc.InstanceFactory;
-import persistence.sql.meta.EntityKey;
-import persistence.sql.meta.EntityTable;
+import persistence.meta.EntityKey;
+import persistence.meta.EntityTable;
 
 import java.util.ArrayList;
 import java.util.List;

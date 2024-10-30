@@ -1,32 +1,74 @@
 package persistence.sql.dml;
 
-import persistence.sql.meta.EntityColumn;
-import persistence.sql.meta.EntityTable;
-
-import java.util.List;
-import java.util.stream.Collectors;
+import static persistence.sql.QueryConst.*;
 
 public class SelectQueryBuilder {
-    private static final String FIND_ALL_QUERY_TEMPLATE = "SELECT %s FROM %s";
-    private static final String FIND_BY_ID_QUERY_TEMPLATE = "SELECT %s FROM %s WHERE %s";
+    private final StringBuilder sql;
 
-    public String findAll(Class<?> entityType) {
-        final EntityTable entityTable = new EntityTable(entityType);
-        return FIND_ALL_QUERY_TEMPLATE.formatted(getColumnClause(entityTable), entityTable.getTableName());
+    public SelectQueryBuilder() {
+        this.sql = new StringBuilder();
     }
 
-    public String findById(Class<?> entityType, Object id) {
-        final EntityTable entityTable = new EntityTable(entityType);
-        return FIND_BY_ID_QUERY_TEMPLATE.formatted(getColumnClause(entityTable), entityTable.getTableName(),
-                entityTable.getWhereClause(id));
+    public SelectQueryBuilder select(String clause) {
+        sql.append(SELECT_CLAUSE)
+                .append(BLANK)
+                .append(clause)
+                .append(BLANK);
+        return this;
     }
 
-    private String getColumnClause(EntityTable entityTable) {
-        final List<String> columnDefinitions = entityTable.getEntityColumns()
-                .stream()
-                .map(EntityColumn::getColumnName)
-                .collect(Collectors.toList());
+    public SelectQueryBuilder from(String clause) {
+        sql.append(FROM_CLAUSE)
+                .append(BLANK)
+                .append(clause)
+                .append(BLANK);
+        return this;
+    }
 
-        return String.join(", ", columnDefinitions);
+    public SelectQueryBuilder innerJoin(String clause) {
+        sql.append(INNER_JOIN__CLAUSE)
+                .append(BLANK)
+                .append(clause)
+                .append(BLANK);
+        return this;
+    }
+
+    public SelectQueryBuilder where(String clause) {
+        sql.append(WHERE_CLAUSE)
+                .append(BLANK)
+                .append(clause)
+                .append(BLANK);
+        return this;
+    }
+
+    public SelectQueryBuilder where(String leftClause, Object rightClause) {
+        sql.append(WHERE_CLAUSE)
+                .append(BLANK)
+                .append(leftClause)
+                .append(EQUAL)
+                .append(getValueWithQuotes(rightClause))
+                .append(BLANK);
+        return this;
+    }
+
+    public SelectQueryBuilder on(String leftClause, String rightClause) {
+        sql.append(ON_CLAUSE)
+                .append(BLANK)
+                .append(leftClause)
+                .append(EQUAL)
+                .append(rightClause)
+                .append(BLANK);
+        return this;
+    }
+
+    public String build() {
+        return sql.toString().trim();
+    }
+
+    private String getValueWithQuotes(Object value) {
+        if (value.getClass() == String.class) {
+            return "'%s'".formatted(String.valueOf(value));
+        }
+        return String.valueOf(value);
     }
 }

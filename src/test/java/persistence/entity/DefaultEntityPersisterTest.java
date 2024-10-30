@@ -8,13 +8,13 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import persistence.dialect.H2Dialect;
 import persistence.fixture.EntityWithId;
-import persistence.sql.ddl.CreateQueryBuilder;
-import persistence.sql.ddl.DropQueryBuilder;
-import persistence.sql.dml.DeleteQueryBuilder;
-import persistence.sql.dml.InsertQueryBuilder;
-import persistence.sql.dml.SelectQueryBuilder;
-import persistence.sql.dml.UpdateQueryBuilder;
-import persistence.sql.meta.EntityTable;
+import persistence.meta.EntityTable;
+import persistence.sql.ddl.CreateQuery;
+import persistence.sql.ddl.DropQuery;
+import persistence.sql.dml.DeleteQuery;
+import persistence.sql.dml.InsertQuery;
+import persistence.sql.dml.SelectQuery;
+import persistence.sql.dml.UpdateQuery;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -27,7 +27,7 @@ class DefaultEntityPersisterTest {
     @BeforeEach
     void setUp() {
         jdbcTemplate = new JdbcTemplate(H2ConnectionFactory.getConnection());
-        entityLoader = new DefaultEntityLoader(jdbcTemplate, new SelectQueryBuilder());
+        entityLoader = new DefaultEntityLoader(jdbcTemplate, new SelectQuery());
         entityManager = DefaultEntityManager.of(jdbcTemplate);
 
         createTable();
@@ -42,8 +42,8 @@ class DefaultEntityPersisterTest {
     @DisplayName("엔티티를 저장한다.")
     void insert() {
         // given
-        final EntityPersister entityPersister = new DefaultEntityPersister(jdbcTemplate, new InsertQueryBuilder(),
-                new UpdateQueryBuilder(), new DeleteQueryBuilder());
+        final EntityPersister entityPersister = new DefaultEntityPersister(jdbcTemplate, new InsertQuery(),
+                new UpdateQuery(), new DeleteQuery());
         final EntityWithId entity = new EntityWithId("Jaden", 30, "test@email.com", 1);
 
         // when
@@ -65,8 +65,8 @@ class DefaultEntityPersisterTest {
     @DisplayName("엔티티를 수정한다.")
     void update() {
         // given
-        final EntityPersister entityPersister = new DefaultEntityPersister(jdbcTemplate, new InsertQueryBuilder(),
-                new UpdateQueryBuilder(), new DeleteQueryBuilder());
+        final EntityPersister entityPersister = new DefaultEntityPersister(jdbcTemplate, new InsertQuery(),
+                new UpdateQuery(), new DeleteQuery());
         final EntityWithId entity = new EntityWithId("Jaden", 30, "test@email.com", 1);
         insertData(entity);
         final EntityWithId updatedEntity = new EntityWithId(entity.getId(), "Jackson", 20, "test2@email.com");
@@ -91,8 +91,8 @@ class DefaultEntityPersisterTest {
     @DisplayName("엔티티를 삭제한다.")
     void delete() {
         // given
-        final EntityPersister entityPersister = new DefaultEntityPersister(jdbcTemplate, new InsertQueryBuilder(),
-                new UpdateQueryBuilder(), new DeleteQueryBuilder());
+        final EntityPersister entityPersister = new DefaultEntityPersister(jdbcTemplate, new InsertQuery(),
+                new UpdateQuery(), new DeleteQuery());
         final EntityWithId entity = new EntityWithId("Jaden", 30, "test@email.com", 1);
         insertData(entity);
 
@@ -106,17 +106,16 @@ class DefaultEntityPersisterTest {
     }
 
     private void createTable() {
-        final CreateQueryBuilder createQueryBuilder = new CreateQueryBuilder(EntityWithId.class, new H2Dialect());
-        jdbcTemplate.execute(createQueryBuilder.create());
+        final CreateQuery createQuery = new CreateQuery(EntityWithId.class, new H2Dialect());
+        jdbcTemplate.execute(createQuery.create());
     }
 
     private void insertData(EntityWithId entity) {
         entityManager.persist(entity);
-        entityManager.flush();
     }
 
     private void dropTable() {
-        final DropQueryBuilder dropQueryBuilder = new DropQueryBuilder(EntityWithId.class);
-        jdbcTemplate.execute(dropQueryBuilder.drop());
+        final DropQuery dropQuery = new DropQuery(EntityWithId.class);
+        jdbcTemplate.execute(dropQuery.drop());
     }
 }

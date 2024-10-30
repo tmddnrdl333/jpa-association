@@ -36,5 +36,6 @@ public class DefaultIdMapper implements IdMapper {
         final Object value = resultSet.getObject(1);
         field.setAccessible(true);
         field.set(entity, value);
+        logger.debug("generated key: {}", value);
     }
 }
