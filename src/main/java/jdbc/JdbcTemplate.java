@@ -1,6 +1,7 @@
 package jdbc;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -36,6 +37,21 @@ public class JdbcTemplate {
                 result.add(rowMapper.mapRow(resultSet));
             }
             return result;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public Object insertAndGetId(final String sql) {
+        try (final PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            statement.executeUpdate();
+            try (final ResultSet resultSet = statement.getGeneratedKeys()) {
+                if (resultSet.next()) {
+                    return resultSet.getObject(1);
+                }
+
+                return 0L;
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
