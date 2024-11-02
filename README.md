@@ -122,3 +122,13 @@ public class LazyLoadingHandler implements InvocationHandler {
 - [x] lazy loading 구현
   - [x] 프록시 초기화
     프록시 객체에 대해 실제 엔티티의 어떤 데이터에 처음 접근하려 할 때, 하이버네이트는 그때서야 데이터베이스에 쿼리를 보내 실제 엔티티 객체를 로드하고, 프록시 객체는 이 실제 엔티티 객체를 내부에 보관
+
+## 3단계 - OneToMany (FetchType.LAZY)
+
+### 요구사항 1 - 로딩 전략에 따른 분기 (FetchType.LAZY)
+- [x] FetchType.EAGER, FetchType.LAZY 에 따른 로딩 전략에 대한 분기 처리
+  - [x] FetchType.EAGER 인 경우
+    - [x] Join Query 실행 및 연관 엔티티 조회
+  - [x] FetchType.LAZY 인 경우
+    - [x] Query 실행 및 연관 엔티티 프록시 생성.
+### 요구사항 2 - Proxy 를 활용한 지연 로딩 구현

@@ -59,11 +59,15 @@ public class TableAssociationDefinition {
         return associatedTableDefinition.getTableName();
     }
 
-    public boolean isFetchEager() {
+    public List<? extends ColumnDefinitionAware> getColumns() {
+        return associatedTableDefinition.getColumns();
+    }
+
+    public boolean isEager() {
         return fetchType == FetchType.EAGER;
     }
 
-    public boolean isFetchLazy() {
+    public boolean isLazy() {
         return fetchType == FetchType.LAZY;
     }
 

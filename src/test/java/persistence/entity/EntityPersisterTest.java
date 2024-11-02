@@ -53,6 +53,7 @@ class EntityPersisterTest {
 
     private static DatabaseServer server;
     private static JdbcTemplate jdbcTemplate;
+    private static EntityPersister entityPersister;
 
     @BeforeEach
     void setUp() throws SQLException {
@@ -62,6 +63,7 @@ class EntityPersisterTest {
         jdbcTemplate = new JdbcTemplate(server.getConnection());
         String query2 = new CreateTableQueryBuilder(new H2Dialect(), QueryTestEntityWithIdentityId.class, List.of()).build();
         jdbcTemplate.execute(query2);
+        entityPersister = new EntityPersister(jdbcTemplate);
     }
 
     @AfterEach
@@ -78,8 +80,8 @@ class EntityPersisterTest {
         QueryTestEntityWithIdentityId entityWithId0 = new QueryTestEntityWithIdentityId(0L);
 
         assertAll(
-                () -> assertThat(new EntityPersister(entityWithId1, jdbcTemplate).getEntityId()).isEqualTo(1L),
-                () -> assertThat(new EntityPersister(entityWithId0, jdbcTemplate).getEntityId()).isEqualTo(0L)
+                () -> assertThat(entityPersister.getEntityId(entityWithId1)).isEqualTo(1L),
+                () -> assertThat(entityPersister.getEntityId(entityWithId0)).isEqualTo(0L)
         );
     }
 
@@ -87,11 +89,10 @@ class EntityPersisterTest {
     @DisplayName("identity 전략 + id값이 null인 경우 정상적으로 insert되어야 한다.")
     void testInsert() {
         QueryTestEntityWithIdentityId entity = new QueryTestEntityWithIdentityId(null, "John", 25);
-        EntityPersister persister = new EntityPersister(entity, jdbcTemplate);
 
-        persister.insert(entity);
+        entityPersister.insert(entity);
 
-        EntityManager em = new EntityManagerImpl(jdbcTemplate, new PersistenceContextImpl());
+        EntityManager em = new EntityManagerImpl(jdbcTemplate, new PersistenceContextImpl(), entityPersister);
         QueryTestEntityWithIdentityId saved = em.find(QueryTestEntityWithIdentityId.class, 1L);
         assertAll(
                 () -> assertThat(saved.id).isEqualTo(1L),
@@ -103,11 +104,10 @@ class EntityPersisterTest {
     @Test
     void shouldExecuteInsertWithNullValue() {
         QueryTestEntityWithIdentityId entity = new QueryTestEntityWithIdentityId(1L);
-        EntityPersister persister = new EntityPersister(entity, jdbcTemplate);
 
-        persister.insert(entity);
+        entityPersister.insert(entity);
 
-        EntityManager em = new EntityManagerImpl(jdbcTemplate, new PersistenceContextImpl());
+        EntityManager em = new EntityManagerImpl(jdbcTemplate, new PersistenceContextImpl(), entityPersister);
         QueryTestEntityWithIdentityId saved = em.find(QueryTestEntityWithIdentityId.class, 1L);
         assertAll(
                 () -> assertThat(saved.id).isEqualTo(1L),
@@ -119,14 +119,13 @@ class EntityPersisterTest {
     @Test
     void shouldExecuteUpdate() {
         QueryTestEntityWithIdentityId entity = new QueryTestEntityWithIdentityId(1L, "John", 25);
-        EntityPersister persister = new EntityPersister(entity, jdbcTemplate);
-        persister.insert(entity);
+        entityPersister.insert(entity);
 
         QueryTestEntityWithIdentityId updatedEntity = new QueryTestEntityWithIdentityId(1L, "Chanho", 30);
 
-        persister.update(updatedEntity);
+        entityPersister.update(updatedEntity);
 
-        EntityManager em = new EntityManagerImpl(jdbcTemplate, new PersistenceContextImpl());
+        EntityManager em = new EntityManagerImpl(jdbcTemplate, new PersistenceContextImpl(), entityPersister);
         QueryTestEntityWithIdentityId updated = em.find(QueryTestEntityWithIdentityId.class, 1L);
 
         assertAll(
@@ -139,12 +138,11 @@ class EntityPersisterTest {
     @Test
     void shouldExecuteDelete() {
         QueryTestEntityWithIdentityId entity = new QueryTestEntityWithIdentityId(1L);
-        EntityPersister persister = new EntityPersister(entity, jdbcTemplate);
 
-        persister.insert(entity);
-        persister.delete(entity);
+        entityPersister.insert(entity);
+        entityPersister.delete(entity);
 
-        EntityManager em = new EntityManagerImpl(jdbcTemplate, new PersistenceContextImpl());
+        EntityManager em = new EntityManagerImpl(jdbcTemplate, new PersistenceContextImpl(), entityPersister);
         assertThrows(RuntimeException.class, () -> em.find(QueryTestEntityWithIdentityId.class, 1L));
     }
 }

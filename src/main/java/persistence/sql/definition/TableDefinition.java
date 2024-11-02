@@ -1,5 +1,6 @@
 package persistence.sql.definition;
 
+import common.ReflectionFieldAccessUtils;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToMany;
@@ -8,11 +9,13 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 public class TableDefinition {
@@ -148,5 +151,72 @@ public class TableDefinition {
 
     public String getIdFieldName() {
         return tableId.getEntityFieldName();
+    }
+
+    public Serializable getIdValue(Object entity) {
+        final TableId tableId = getTableId();
+        final Object id = getValue(entity, tableId);
+
+        if (id instanceof Serializable) {
+            return (Serializable) id;
+        }
+
+        return null;
+    }
+
+    public Object getValue(Object entity, ColumnDefinitionAware column) {
+        for (Field declaredField : getEntityClass().getDeclaredFields()) {
+            if (declaredField.getName().equals(column.getEntityFieldName())) {
+                return ReflectionFieldAccessUtils.accessAndGet(entity, declaredField);
+            }
+        }
+
+        return null;
+    }
+
+    public Object getValue(Object entity, String databaseColumnName) {
+        for (ColumnDefinitionAware column : getColumns()) {
+            if (column.getDatabaseColumnName().equals(databaseColumnName)) {
+                return getValue(entity, column);
+            }
+        }
+
+        return null;
+    }
+
+    public List<? extends ColumnDefinitionAware> hasValueColumns(Object entity) {
+        return getColumns().stream()
+                .filter(column -> hasValue(entity, column))
+                .toList();
+    }
+
+    public boolean hasValue(Object entity, ColumnDefinitionAware column) {
+        final Object value = getValue(entity, column);
+        return value != null;
+    }
+
+    public boolean hasId(Object entity) {
+        return getIdValue(entity) != null;
+    }
+
+    public Collection<?> getIterableAssociatedValue(
+            Object entity,
+            TableAssociationDefinition association) {
+
+        try {
+            Field field = getEntityClass().getDeclaredField(association.getFieldName());
+            if (!Collection.class.isAssignableFrom(field.getType())) {
+                return Collections.emptyList();
+            }
+            return (Collection<?>) ReflectionFieldAccessUtils.accessAndGet(entity, field);
+        } catch (ReflectiveOperationException e) {
+            return null;
+        }
+    }
+
+    public List<Object> getValues(Object entity, List<? extends ColumnDefinitionAware> columns) {
+        return columns.stream()
+                .map(column -> getValue(entity, column))
+                .toList();
     }
 }

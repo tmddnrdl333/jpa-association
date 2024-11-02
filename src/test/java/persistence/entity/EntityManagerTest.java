@@ -13,18 +13,19 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import persistence.fixtures.TestEagerOrder;
+import persistence.fixtures.TestEagerOrderItem;
+import persistence.fixtures.TestLazyOrder;
+import persistence.fixtures.TestLazyOrderItem;
+import persistence.proxy.PersistentList;
 import persistence.sql.H2Dialect;
 import persistence.sql.SqlType;
 import persistence.sql.ddl.query.CreateTableQueryBuilder;
 import persistence.sql.ddl.query.DropQueryBuilder;
 import persistence.sql.definition.ColumnDefinitionAware;
-import persistence.sql.definition.EntityTableMapper;
-import persistence.sql.definition.TableDefinition;
 
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
+import java.lang.reflect.Proxy;
 import java.sql.SQLException;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -105,6 +106,11 @@ public class EntityManagerTest {
         jdbcTemplate.execute(query);
         jdbcTemplate.execute(query2);
         jdbcTemplate.execute(query3);
+
+        jdbcTemplate.execute(TestLazyOrder.createTableQuery());
+        jdbcTemplate.execute(TestEagerOrder.createTableQuery());
+        jdbcTemplate.execute(TestLazyOrderItem.createTableQuery());
+        jdbcTemplate.execute(TestEagerOrderItem.createTableQuery());
     }
 
     @AfterEach
@@ -117,13 +123,19 @@ public class EntityManagerTest {
         jdbcTemplate.execute(query);
         jdbcTemplate.execute(query2);
         jdbcTemplate.execute(query3);
+
+        jdbcTemplate.execute(new DropQueryBuilder(TestLazyOrder.class).build());
+        jdbcTemplate.execute(new DropQueryBuilder(TestEagerOrder.class).build());
+        jdbcTemplate.execute(new DropQueryBuilder(TestLazyOrderItem.class).build());
+        jdbcTemplate.execute(new DropQueryBuilder(TestEagerOrderItem.class).build());
         server.stop();
     }
 
     @Test
     @DisplayName("Identity 전략을 사용하는 엔티티를 저장한다.")
     void testPersistWithIdentityId() throws Exception {
-        EntityManager entityManager = new EntityManagerImpl(new JdbcTemplate(server.getConnection()), new PersistenceContextImpl());
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(server.getConnection());
+        EntityManager entityManager = new EntityManagerImpl(jdbcTemplate, new PersistenceContextImpl(), new EntityPersister(jdbcTemplate));
         EntityManagerTestEntityWithIdentityId entity = new EntityManagerTestEntityWithIdentityId(null, "john_doe", 30);
         entityManager.persist(entity);
 
@@ -138,7 +150,8 @@ public class EntityManagerTest {
     @Test
     @DisplayName("Identity 전략을 사용하지만, id값이 있는 경우 에러가 발생한다.")
     void testPersistWithIdentityIdButId() throws Exception {
-        EntityManager entityManager = new EntityManagerImpl(new JdbcTemplate(server.getConnection()), new PersistenceContextImpl());
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(server.getConnection());
+        EntityManager entityManager = new EntityManagerImpl(jdbcTemplate, new PersistenceContextImpl(), new EntityPersister(jdbcTemplate));
         EntityManagerTestEntityWithIdentityId entity = new EntityManagerTestEntityWithIdentityId(1L, "john_doe", 30);
 
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> entityManager.persist(entity));
@@ -148,7 +161,8 @@ public class EntityManagerTest {
     @Test
     @DisplayName("같은 엔티티에대해 저장이 여러번 호출되면 예외가 발생하지 않는다.")
     void testPersistManyTimes() throws Exception {
-        EntityManager entityManager = new EntityManagerImpl(new JdbcTemplate(server.getConnection()), new PersistenceContextImpl());
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(server.getConnection());
+        EntityManager entityManager = new EntityManagerImpl(jdbcTemplate, new PersistenceContextImpl(), new EntityPersister(jdbcTemplate));
         EntityManagerTestEntityWithIdentityId entity = new EntityManagerTestEntityWithIdentityId(null, "john_doe", 30);
 
         entityManager.persist(entity);
@@ -165,7 +179,8 @@ public class EntityManagerTest {
     @Test
     @DisplayName("EntityManager.update()를 통해 엔티티를 수정한다.")
     void testMerge() throws Exception {
-        EntityManager entityManager = new EntityManagerImpl(new JdbcTemplate(server.getConnection()), new PersistenceContextImpl());
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(server.getConnection());
+        EntityManager entityManager = new EntityManagerImpl(jdbcTemplate, new PersistenceContextImpl(), new EntityPersister(jdbcTemplate));
         EntityManagerTestEntityWithIdentityId entity = new EntityManagerTestEntityWithIdentityId("john_doe", 30);
         entityManager.persist(entity);
 
@@ -186,7 +201,8 @@ public class EntityManagerTest {
     @Test
     @DisplayName("관리되고 있지 않은 엔티티를 EntityManager.merge()를 호출 하면 예외가 발생한다.")
     void testMergeNotManagedEntity() throws Exception {
-        EntityManager entityManager = new EntityManagerImpl(new JdbcTemplate(server.getConnection()), new PersistenceContextImpl());
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(server.getConnection());
+        EntityManager entityManager = new EntityManagerImpl(jdbcTemplate, new PersistenceContextImpl(), new EntityPersister(jdbcTemplate));
         EntityManagerTestEntityWithIdentityId entity = new EntityManagerTestEntityWithIdentityId(1L, "john_doe", 30);
 
         entity.name = "jane_doe";
@@ -199,7 +215,8 @@ public class EntityManagerTest {
     @Test
     @DisplayName("EntityManager.remove()를 통해 엔티티를 삭제한다.")
     void testRemove() throws Exception {
-        EntityManager entityManager = new EntityManagerImpl(new JdbcTemplate(server.getConnection()), new PersistenceContextImpl());
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(server.getConnection());
+        EntityManager entityManager = new EntityManagerImpl(jdbcTemplate, new PersistenceContextImpl(), new EntityPersister(jdbcTemplate));
         EntityManagerTestEntityWithIdentityId entity = new EntityManagerTestEntityWithIdentityId(null, "john_doe", 30);
         entityManager.persist(entity);
 
@@ -213,56 +230,11 @@ public class EntityManagerTest {
     }
 
     @Test
-    @DisplayName("Entity Manager Select without Join")
-    void testSelectWithoutJoin() throws Exception {
-        EntityManager entityManager = new EntityManagerImpl(new JdbcTemplate(server.getConnection()), new PersistenceContextImpl());
-        Order order = new Order("order_number");
-        entityManager.persist(order);
-
-        Order persistedOrder = entityManager.find(Order.class, 1L);
-        assertAll(
-                () -> assertThat(persistedOrder.getId()).isEqualTo(1L),
-                () -> assertThat(persistedOrder.getOrderNumber()).isEqualTo("order_number"),
-                () -> assertThat(persistedOrder.getOrderItems()).isEmpty()
-        );
-    }
-
-    @Test
-    @DisplayName("Entity Manager Select with Join")
-    void testSelectWithJoin() throws Exception {
-        EntityManager entityManager = new EntityManagerImpl(new JdbcTemplate(server.getConnection()), new PersistenceContextImpl());
-        Order order = new Order("order_number");
-        OrderItem orderItem1 = new OrderItem("product1", 1);
-        OrderItem orderItem2 = new OrderItem("product2", 2);
-
-        entityManager.persist(order);
-        entityManager.persist(orderItem1);
-        entityManager.persist(orderItem2);
-
-        order.getOrderItems().add(orderItem1);
-        order.getOrderItems().add(orderItem2);
-
-        entityManager.merge(order);
-        Order persistedOrder = entityManager.find(Order.class, 1L);
-
-        assertAll(
-                () -> assertThat(persistedOrder.getId()).isEqualTo(1L),
-                () -> assertThat(persistedOrder.getOrderNumber()).isEqualTo("order_number"),
-                () -> assertThat(persistedOrder.getOrderItems()).hasSize(2),
-                () -> assertThat(persistedOrder.getOrderItems().get(0).getId()).isEqualTo(1L),
-                () -> assertThat(persistedOrder.getOrderItems().get(0).getProduct()).isEqualTo("product1"),
-                () -> assertThat(persistedOrder.getOrderItems().get(0).getQuantity()).isEqualTo(1),
-                () -> assertThat(persistedOrder.getOrderItems().get(1).getId()).isEqualTo(2L),
-                () -> assertThat(persistedOrder.getOrderItems().get(1).getProduct()).isEqualTo("product2"),
-                () -> assertThat(persistedOrder.getOrderItems().get(1).getQuantity()).isEqualTo(2)
-        );
-    }
-
-    @Test
     @DisplayName("Insert 시 연관 테이블이 없으면 Insert되지 않는다.")
     void testInsertWithoutAssociationTable() throws SQLException {
 
-        EntityManager entityManager = new EntityManagerImpl(new JdbcTemplate(server.getConnection()), new PersistenceContextImpl());
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(server.getConnection());
+        EntityManager entityManager = new EntityManagerImpl(jdbcTemplate, new PersistenceContextImpl(), new EntityPersister(jdbcTemplate));
         Order order = new Order("order_number");
         entityManager.persist(order);
 
@@ -277,7 +249,8 @@ public class EntityManagerTest {
     @Test
     @DisplayName("Insert 시 연관 테이블까지 Insert 되어야 한다.")
     void testInsertWithAssociationTable() throws SQLException {
-        EntityManager em = new EntityManagerImpl(new JdbcTemplate(server.getConnection()), new PersistenceContextImpl());
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(server.getConnection());
+        EntityManager em = new EntityManagerImpl(jdbcTemplate, new PersistenceContextImpl(), new EntityPersister(jdbcTemplate));
         Order order = new Order("order_number");
         OrderItem orderItem1 = new OrderItem("product1", 1);
         OrderItem orderItem2 = new OrderItem("product2", 2);
@@ -289,15 +262,7 @@ public class EntityManagerTest {
         em.persist(order);
         em.clear();
 
-//        final Connection connection = server.getConnection();
-//        ResultSet resultSet = connection.prepareStatement("SELECT orders.id, orders.orderNumber, order_items.id, order_items.product, order_items.quantity FROM orders LEFT JOIN order_items ON order_items.order_id = orders.id;")
-//                .executeQuery();
-//        printAllRowsAndColumns(resultSet);
-
-
-//        jdbcTemplate.execute("SELECT orders.id, orders.orderNumber, order_items.id, order_items.product, order_items.quantity FROM orders LEFT JOIN order_items ON order_items.order_id = orders.id;");
         Order persistedOrder = em.find(Order.class, 1L);
-//
         assertAll(
                 () -> assertThat(persistedOrder.getId()).isEqualTo(1L),
                 () -> assertThat(persistedOrder.getOrderNumber()).isEqualTo("order_number"),
@@ -312,39 +277,82 @@ public class EntityManagerTest {
     }
 
     @Test
-    @DisplayName("em.findAll test")
-    void testFindAll() throws SQLException {
-        EntityManager em = new EntityManagerImpl(new JdbcTemplate(server.getConnection()), new PersistenceContextImpl());
+    @DisplayName("연관 데이터가 없다면 조회 시 빈 리스트를 반환한다.")
+    void testFindWithoutAssociationTable() throws SQLException {
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(server.getConnection());
+        EntityManager entityManager = new EntityManagerImpl(jdbcTemplate, new PersistenceContextImpl(), new EntityPersister(jdbcTemplate));
         Order order = new Order("order_number");
-        OrderItem orderItem1 = new OrderItem("product1", 1);
-        OrderItem orderItem2 = new OrderItem("product2", 2);
+        entityManager.persist(order);
 
+        Order persistedOrder = entityManager.find(Order.class, 1L);
+        assertAll(
+                () -> assertThat(persistedOrder.getId()).isEqualTo(1L),
+                () -> assertThat(persistedOrder.getOrderNumber()).isEqualTo("order_number"),
+                () -> assertThat(persistedOrder.getOrderItems()).isEmpty()
+        );
+    }
+
+    @Test
+    @DisplayName("Eager Fetch 전략을 사용하여 Join을 통해 데이터를 조회한다.")
+    void testEagerFetch() throws Exception {
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(server.getConnection());
+        EntityManager entityManager = new EntityManagerImpl(jdbcTemplate, new PersistenceContextImpl(), new EntityPersister(jdbcTemplate));
+        TestEagerOrder order = new TestEagerOrder("order_number");
+        TestEagerOrderItem orderItem1 = new TestEagerOrderItem("product1", 1);
+        TestEagerOrderItem orderItem2 = new TestEagerOrderItem("product2", 2);
 
         order.getOrderItems().add(orderItem1);
         order.getOrderItems().add(orderItem2);
 
-        em.persist(order);
-        em.clear();
+        entityManager.persist(order);
+        entityManager.clear();
 
-        EntityLoader el = new EntityLoader(jdbcTemplate);
-        Collection<OrderItem> orderItems = el.loadLazyCollection(OrderItem.class, new EntityTableMapper(order));
-        assertThat(orderItems).hasSize(2);
-
+        TestEagerOrder persistedOrder = entityManager.find(TestEagerOrder.class, 1L);
+        System.out.println("-------------------------After Find----------------------------------");
+        assertAll(
+                () -> assertThat(persistedOrder.getId()).isEqualTo(1L),
+                () -> assertThat(persistedOrder.getOrderNumber()).isEqualTo("order_number"),
+                () -> assertThat(persistedOrder.getOrderItems()).hasSize(2),
+                () -> assertThat(persistedOrder.getOrderItems().get(0).getId()).isEqualTo(1L),
+                () -> assertThat(persistedOrder.getOrderItems().get(0).getProduct()).isEqualTo("product1"),
+                () -> assertThat(persistedOrder.getOrderItems().get(0).getQuantity()).isEqualTo(1),
+                () -> assertThat(persistedOrder.getOrderItems().get(1).getId()).isEqualTo(2L),
+                () -> assertThat(persistedOrder.getOrderItems().get(1).getProduct()).isEqualTo("product2"),
+                () -> assertThat(persistedOrder.getOrderItems().get(1).getQuantity()).isEqualTo(2)
+        );
     }
 
-    public static void printAllRowsAndColumns(ResultSet resultSet) throws SQLException {
-        ResultSetMetaData metaData = resultSet.getMetaData();
-        int columnCount = metaData.getColumnCount();
+    @Test
+    @DisplayName("Lazy Fetch 전략을 사용하여 데이터가 접근 될 때 쿼리가 발생한다.")
+    void testLazyFetch() throws SQLException {
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(server.getConnection());
+        EntityManager entityManager = new EntityManagerImpl(jdbcTemplate, new PersistenceContextImpl(), new EntityPersister(jdbcTemplate));
+        TestLazyOrder order = new TestLazyOrder("order_number");
+        TestLazyOrderItem orderItem1 = new TestLazyOrderItem("product1", 1);
+        TestLazyOrderItem orderItem2 = new TestLazyOrderItem("product2", 2);
 
-        int rowIndex = 0;
-        while (resultSet.next()) {
-            System.out.println("Row " + (++rowIndex) + ":");
-            for (int i = 1; i <= columnCount; i++) {
-                String columnName = metaData.getColumnName(i);
-                Object value = resultSet.getObject(i);
-                System.out.printf("  %s: %s%n", columnName, value);
-            }
-        }
+        order.getOrderItems().add(orderItem1);
+        order.getOrderItems().add(orderItem2);
+
+        entityManager.persist(order);
+        entityManager.clear();
+
+        TestLazyOrder persistedOrder = entityManager.find(TestLazyOrder.class, 1L);
+
+        assertAll(
+                () -> assertThat(Proxy.isProxyClass(persistedOrder.getOrderItems().getClass())).isTrue(),
+                () -> assertThat(Proxy.getInvocationHandler(persistedOrder.getOrderItems())).isInstanceOf(PersistentList.class),
+                () -> assertThat(((PersistentList<?>) Proxy.getInvocationHandler(persistedOrder.getOrderItems())).isInitialized()).isFalse(),
+
+                () -> assertThat(persistedOrder.getOrderItems()).hasSize(2),
+
+                () -> assertThat(((PersistentList<?>) Proxy.getInvocationHandler(persistedOrder.getOrderItems())).isInitialized()).isTrue(),
+                () -> assertThat(persistedOrder.getOrderItems().get(0).getId()).isEqualTo(1L),
+                () -> assertThat(persistedOrder.getOrderItems().get(0).getProduct()).isEqualTo("product1"),
+                () -> assertThat(persistedOrder.getOrderItems().get(0).getQuantity()).isEqualTo(1),
+                () -> assertThat(persistedOrder.getOrderItems().get(1).getId()).isEqualTo(2L),
+                () -> assertThat(persistedOrder.getOrderItems().get(1).getProduct()).isEqualTo("product2"),
+                () -> assertThat(persistedOrder.getOrderItems().get(1).getQuantity()).isEqualTo(2)
+        );
     }
-
 }

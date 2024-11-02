@@ -1,7 +1,7 @@
 package persistence.entity;
 
 import persistence.sql.definition.ColumnDefinitionAware;
-import persistence.sql.definition.EntityTableMapper;
+import persistence.sql.definition.TableDefinition;
 
 import java.util.HashMap;
 import java.util.List;
@@ -12,16 +12,17 @@ public class EntitySnapshot {
     private final Map<String, Object> columnSnapshots = new HashMap<>();
 
     public EntitySnapshot(Object entity) {
-        final EntityTableMapper entityMapper = new EntityTableMapper(entity);
-        final List<? extends ColumnDefinitionAware> columns = entityMapper.getColumnDefinitions();
+        TableDefinition tableDefinition = new TableDefinition(entity.getClass());
+        final List<? extends ColumnDefinitionAware> columns = tableDefinition.getColumns();
+
         for (ColumnDefinitionAware column : columns) {
-            final Object value = getNullableValue(column, entityMapper);
+            final Object value = getNullableValue(column, tableDefinition, entity);
             columnSnapshots.put(column.getDatabaseColumnName(), value);
         }
     }
 
-    private static Object getNullableValue(ColumnDefinitionAware column, EntityTableMapper entityMapper) {
-        return entityMapper.hasValue(column) ? quoted(entityMapper.getValue(column)) : null;
+    private static Object getNullableValue(ColumnDefinitionAware column, TableDefinition tableDefinition, Object entity) {
+        return tableDefinition.hasValue(entity, column) ? quoted(tableDefinition.getValue(entity, column)) : null;
     }
 
     private static String quoted(Object value) {
@@ -29,11 +30,11 @@ public class EntitySnapshot {
     }
 
     public boolean hasDirtyColumns(Object managedEntity) {
-        final EntityTableMapper entityMapper = new EntityTableMapper(managedEntity);
-        final List<? extends ColumnDefinitionAware> columns = entityMapper.getColumnDefinitions();
+        final TableDefinition tableDefinition = new TableDefinition(managedEntity.getClass());
+        final List<? extends ColumnDefinitionAware> columns = tableDefinition.getColumns();
         return columns.stream()
                 .anyMatch(column -> {
-                            final Object entityValue = getNullableValue(column, entityMapper);
+                            final Object entityValue = getNullableValue(column, tableDefinition, managedEntity);
                             final Object snapshotValue = this.columnSnapshots.get(column.getDatabaseColumnName());
                             return !Objects.equals(entityValue, snapshotValue);
                         }

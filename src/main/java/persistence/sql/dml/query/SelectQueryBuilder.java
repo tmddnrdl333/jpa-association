@@ -57,12 +57,12 @@ public class SelectQueryBuilder implements BaseQueryBuilder {
         final StringJoiner joiner = new StringJoiner(", ");
 
         columns.forEach(column -> {
-            final String aliased = AliasRule.buildWith(tableDefinition.getTableName(), column);
+            final String aliased = AliasRule.with(tableDefinition.getTableName(), column);
             joiner.add(tableDefinition.getTableName() + "." + column + " AS " + aliased);
         });
 
         joinTableColumns.forEach(column -> {
-            final String aliased = AliasRule.buildWith(joinTableDefinition.getTableName(), column);
+            final String aliased = AliasRule.with(joinTableDefinition.getTableName(), column);
             joiner.add(joinTableDefinition.getTableName() + "." + column + " AS " + aliased);
         });
 

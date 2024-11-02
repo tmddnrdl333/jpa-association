@@ -1,10 +1,13 @@
 package common;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class SqlLogger {
     private SqlLogger() {
     }
 
-    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(SqlLogger.class);
+    private static final Logger logger = LoggerFactory.getLogger(SqlLogger.class);
 
     public static void infoCreateTable(String query) {
         logger.info("Creating table with query: {}", query);

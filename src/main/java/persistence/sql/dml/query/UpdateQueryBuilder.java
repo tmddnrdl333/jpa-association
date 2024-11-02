@@ -2,7 +2,7 @@ package persistence.sql.dml.query;
 
 import common.SqlLogger;
 import persistence.sql.definition.ColumnDefinitionAware;
-import persistence.sql.definition.EntityTableMapper;
+import persistence.sql.definition.TableDefinition;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -10,17 +10,17 @@ import java.util.stream.Collectors;
 
 public class UpdateQueryBuilder implements BaseQueryBuilder {
 
-    public String build(Object entity) {
-        final EntityTableMapper entityTableMapper = new EntityTableMapper(entity);
-        final StringBuilder query = new StringBuilder("UPDATE ").append(entityTableMapper.getTableName());
+    public String build(Object entity, TableDefinition tableDefinition) {
+        final StringBuilder query = new StringBuilder("UPDATE ").append(tableDefinition.getTableName());
         columnClause(
                 query,
-                entityTableMapper.getColumnDefinitions().stream()
+                tableDefinition.getColumns().stream()
                         .filter(column -> !column.isPrimaryKey())
                         .collect(
                                 Collectors.toMap(
                                         ColumnDefinitionAware::getDatabaseColumnName,
-                                        column -> entityTableMapper.hasValue(column) ? getQuoted(entityTableMapper.getValue(column)) : "null",
+                                        column -> tableDefinition.hasValue(entity, column)
+                                                ? getQuoted(tableDefinition.getValue(entity, column)) : "null",
                                         (value1, value2) -> value2,
                                         LinkedHashMap::new
                                 )
@@ -29,9 +29,9 @@ public class UpdateQueryBuilder implements BaseQueryBuilder {
         );
 
         query.append(" WHERE ");
-        query.append(entityTableMapper.getIdColumnName())
+        query.append(tableDefinition.getIdColumnName())
                 .append(" = ")
-                .append(entityTableMapper.getIdValue())
+                .append(tableDefinition.getIdValue(entity))
                 .append(";");
 
         String sql = query.toString();
@@ -39,20 +39,23 @@ public class UpdateQueryBuilder implements BaseQueryBuilder {
         return sql;
     }
 
-    public String build(EntityTableMapper parentMapper, EntityTableMapper childMapper) {
-        final StringBuilder query = new StringBuilder("UPDATE ").append(childMapper.getTableName());
+    public String build(Object parent, Object child,
+                        TableDefinition parentDefinition,
+                        TableDefinition childDefinition) {
+
+        final StringBuilder query = new StringBuilder("UPDATE ").append(childDefinition.getTableName());
         columnClause(
                 query,
                 Map.of(
-                        parentMapper.getJoinColumnName(childMapper.getEntityClass()),
-                        parentMapper.getIdValue()
+                        parentDefinition.getJoinColumnName(childDefinition.getEntityClass()),
+                        parentDefinition.getIdValue(parent)
                 )
         );
 
         query.append(" WHERE ");
-        query.append(childMapper.getIdColumnName())
+        query.append(childDefinition.getIdColumnName())
                 .append(" = ")
-                .append(childMapper.getIdValue())
+                .append(childDefinition.getIdValue(child))
                 .append(";");
 
         final String updateQuery = query.toString();

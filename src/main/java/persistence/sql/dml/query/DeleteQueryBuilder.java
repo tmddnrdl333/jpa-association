@@ -1,20 +1,20 @@
 package persistence.sql.dml.query;
 
-import persistence.sql.definition.EntityTableMapper;
+import persistence.sql.definition.TableDefinition;
 
 public class DeleteQueryBuilder {
 
     public String build(Object entity) {
         final StringBuilder query = new StringBuilder();
-        final EntityTableMapper entityTableMapper = new EntityTableMapper(entity);
+        final TableDefinition tableDefinition = new TableDefinition(entity.getClass());
 
         query.append("DELETE FROM ");
-        query.append(entityTableMapper.getTableName());
+        query.append(tableDefinition.getTableName());
 
         query.append(" WHERE ");
-        query.append(entityTableMapper.getIdColumnName())
+        query.append(tableDefinition.getIdColumnName())
                 .append(" = ")
-                .append(entityTableMapper.getIdValue()).append(";");
+                .append(tableDefinition.getIdValue(entity)).append(";");
         return query.toString();
     }
 }

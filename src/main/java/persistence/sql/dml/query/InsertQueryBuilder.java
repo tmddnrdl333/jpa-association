@@ -2,7 +2,7 @@ package persistence.sql.dml.query;
 
 import common.SqlLogger;
 import persistence.sql.definition.ColumnDefinitionAware;
-import persistence.sql.definition.EntityTableMapper;
+import persistence.sql.definition.TableDefinition;
 
 import java.util.List;
 
@@ -11,17 +11,17 @@ public class InsertQueryBuilder implements BaseQueryBuilder {
 
     public String build(Object entity) {
         final StringBuilder query = new StringBuilder();
-        final EntityTableMapper entityTableMapper = new EntityTableMapper(entity);
-        final List<? extends ColumnDefinitionAware> columns = entityTableMapper.hasValueColumns();
+        final TableDefinition tableDefinition = new TableDefinition(entity.getClass());
+        final List<? extends ColumnDefinitionAware> columns = tableDefinition.hasValueColumns(entity);
 
         query.append("INSERT INTO ");
-        query.append(entityTableMapper.getTableName());
+        query.append(tableDefinition.getTableName());
 
         query.append(" (");
         query.append(columnsClause(columns));
 
         query.append(") VALUES (");
-        query.append(valueClause(entityTableMapper, columns));
+        query.append(valueClause(tableDefinition, entity, columns));
         query.append(");");
 
         final String sql = query.toString();
@@ -37,8 +37,8 @@ public class InsertQueryBuilder implements BaseQueryBuilder {
                 .orElse(EMPTY_STRING);
     }
 
-    private String valueClause(EntityTableMapper mapper, List<? extends ColumnDefinitionAware> columns) {
-        return mapper.getValues(columns)
+    private String valueClause(TableDefinition tableDefinition, Object entity, List<? extends ColumnDefinitionAware> columns) {
+        return tableDefinition.getValues(entity, columns)
                 .stream()
                 .map(this::getQuoted)
                 .reduce((value1, value2) -> value1 + ", " + value2)

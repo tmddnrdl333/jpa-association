@@ -3,7 +3,6 @@ package persistence.sql.dml.query;
 import domain.Order;
 import domain.OrderItem;
 import org.junit.jupiter.api.Test;
-import persistence.sql.definition.EntityTableMapper;
 import persistence.sql.definition.TableDefinition;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,9 +41,9 @@ class SelectQueryBuilderTest {
     @Test
     void testFindAll() {
         Order order = new Order(1L, "order_number");
-        EntityTableMapper entityTableMapper = new EntityTableMapper(order);
-        String joinColumnName = entityTableMapper.getJoinColumnName(OrderItem.class);
-        Object value = entityTableMapper.getValue(joinColumnName);
+        TableDefinition orderTableDefinition = new TableDefinition(order.getClass());
+        String joinColumnName = orderTableDefinition.getJoinColumnName(OrderItem.class);
+        Object value = orderTableDefinition.getValue(order, joinColumnName);
 
         OrderItem orderItem = new OrderItem("product", 1);
         String selectQuery = new SelectQueryBuilder(orderItem.getClass()).where(joinColumnName, value.toString()).build();

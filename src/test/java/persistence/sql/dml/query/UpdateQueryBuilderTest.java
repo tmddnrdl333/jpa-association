@@ -6,6 +6,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import persistence.sql.definition.TableDefinition;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -39,7 +40,7 @@ class UpdateQueryBuilderTest {
     @DisplayName("모든 필드에 대한 update 쿼리를 정상적으로 생성한다.")
     void shouldBuildUpdateQuery() {
         HasNullableColumnEntity hasNullableColumnEntity = new HasNullableColumnEntity(1L, "john_doe", 30);
-        String query = new UpdateQueryBuilder().build(hasNullableColumnEntity);
+        String query = new UpdateQueryBuilder().build(hasNullableColumnEntity, new TableDefinition(HasNullableColumnEntity.class));
 
         assertThat(query).contains("UPDATE HasNullableColumnEntity SET name = 'john_doe', age = 30 WHERE id = 1;");
     }
@@ -48,7 +49,7 @@ class UpdateQueryBuilderTest {
     @DisplayName("nullable 필드가 있어도 update 쿼리를 정상적으로 생성한다.")
     void shouldBuildUpdateQueryWhenHasNullableColumns() {
         HasNullableColumnEntity hasNullableColumnEntity = new HasNullableColumnEntity(1L, 30);
-        String query = new UpdateQueryBuilder().build(hasNullableColumnEntity);
+        String query = new UpdateQueryBuilder().build(hasNullableColumnEntity, new TableDefinition(HasNullableColumnEntity.class));
 
         assertThat(query).contains("UPDATE HasNullableColumnEntity SET name = null, age = 30 WHERE id = 1;");
     }
