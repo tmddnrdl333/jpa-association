@@ -1,6 +1,7 @@
 package persistence.meta;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 
 import java.util.List;
 import java.util.Objects;
@@ -107,6 +108,11 @@ public class EntityTable {
         return joinEntityColumn.isOneToManyAssociation();
     }
 
+    public boolean isEager() {
+        final EntityColumn joinEntityColumn = getJoinEntityColumn();
+        return joinEntityColumn.getFetchType() == FetchType.EAGER;
+    }
+
     public EntityColumn getJoinEntityColumn() {
         return entityColumns.getJoinEntityColumn();
     }
@@ -121,6 +127,10 @@ public class EntityTable {
 
     public String getJoinColumnName() {
         return getJoinEntityColumn().getColumnName();
+    }
+
+    public boolean isSimpleMapping() {
+        return Objects.isNull(getJoinEntityColumn()) || getJoinEntityColumn().isOneToManyAndLazy();
     }
 
     public String getAlias() {

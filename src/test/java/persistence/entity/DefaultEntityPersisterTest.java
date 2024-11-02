@@ -6,11 +6,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import persistence.dialect.H2Dialect;
 import persistence.fixture.EntityWithId;
 import persistence.meta.EntityTable;
-import persistence.sql.ddl.CreateQuery;
-import persistence.sql.ddl.DropQuery;
 import persistence.sql.dml.DeleteQuery;
 import persistence.sql.dml.InsertQuery;
 import persistence.sql.dml.SelectQuery;
@@ -18,6 +15,7 @@ import persistence.sql.dml.UpdateQuery;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
+import static util.QueryUtils.*;
 
 class DefaultEntityPersisterTest {
     private JdbcTemplate jdbcTemplate;
@@ -30,12 +28,12 @@ class DefaultEntityPersisterTest {
         entityLoader = new DefaultEntityLoader(jdbcTemplate, new SelectQuery());
         entityManager = DefaultEntityManager.of(jdbcTemplate);
 
-        createTable();
+        createTable(EntityWithId.class);
     }
 
     @AfterEach
     void tearDown() {
-        dropTable();
+        dropTable(EntityWithId.class);
     }
 
     @Test
@@ -105,17 +103,7 @@ class DefaultEntityPersisterTest {
                 .hasMessageContaining("Expected 1 result, got");
     }
 
-    private void createTable() {
-        final CreateQuery createQuery = new CreateQuery(EntityWithId.class, new H2Dialect());
-        jdbcTemplate.execute(createQuery.create());
-    }
-
     private void insertData(EntityWithId entity) {
         entityManager.persist(entity);
-    }
-
-    private void dropTable() {
-        final DropQuery dropQuery = new DropQuery(EntityWithId.class);
-        jdbcTemplate.execute(dropQuery.drop());
     }
 }

@@ -1,6 +1,7 @@
 package persistence.sql.dml;
 
 import domain.Order;
+import domain.OrderItem;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import persistence.fixture.EntityWithId;
@@ -65,6 +66,19 @@ class SelectQueryTest {
                 + "_order_items.product, _order_items.quantity FROM orders _orders "
                 + "INNER JOIN order_items _order_items ON _orders.id = _order_items.order_id "
                 + "WHERE _orders.id = 1");
+    }
+
+    @Test
+    @DisplayName("findCollection 쿼리를 생성한다.")
+    void findCollection() {
+        // given
+        final SelectQuery selectQuery = new SelectQuery();
+
+        // when
+        final String sql = selectQuery.findCollection(OrderItem.class, "order_id", 1);
+
+        // then
+        assertThat(sql).isEqualTo("SELECT id, product, quantity FROM order_items WHERE order_id = 1");
     }
 
     @Test

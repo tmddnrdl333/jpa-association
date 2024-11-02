@@ -6,14 +6,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import persistence.dialect.H2Dialect;
 import persistence.fixture.EntityWithId;
 import persistence.fixture.EntityWithOnlyId;
-import persistence.sql.ddl.CreateQuery;
-import persistence.sql.ddl.DropQuery;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
+import static util.QueryUtils.*;
 
 class DefaultEntityManagerTest {
     private JdbcTemplate jdbcTemplate;
@@ -22,12 +20,12 @@ class DefaultEntityManagerTest {
     void setUp() {
         jdbcTemplate = new JdbcTemplate(H2ConnectionFactory.getConnection());
 
-        createTable();
+        createTable(EntityWithId.class);
     }
 
     @AfterEach
     void tearDown() {
-        dropTable();
+        dropTable(EntityWithId.class);
     }
 
     @Test
@@ -191,17 +189,7 @@ class DefaultEntityManagerTest {
         );
     }
 
-    private void createTable() {
-        final CreateQuery createQuery = new CreateQuery(EntityWithId.class, new H2Dialect());
-        jdbcTemplate.execute(createQuery.create());
-    }
-
     private void insertData(EntityWithId entity, EntityManager entityManager) {
         entityManager.persist(entity);
-    }
-
-    private void dropTable() {
-        final DropQuery dropQuery = new DropQuery(EntityWithId.class);
-        jdbcTemplate.execute(dropQuery.drop());
     }
 }

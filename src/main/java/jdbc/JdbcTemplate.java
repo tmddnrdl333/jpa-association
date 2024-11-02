@@ -26,7 +26,7 @@ public class JdbcTemplate {
         try (final PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.execute();
         } catch (Exception e) {
-            throw new IllegalArgumentException(QUERY_EXECUTE_FAILED_MESSAGE);
+            throw new IllegalArgumentException(QUERY_EXECUTE_FAILED_MESSAGE, e);
         }
     }
 
@@ -39,7 +39,7 @@ public class JdbcTemplate {
                 idMapper.mapRow(generatedKeys);
             }
         } catch (Exception e) {
-            throw new IllegalArgumentException(QUERY_EXECUTE_FAILED_MESSAGE);
+            throw new IllegalArgumentException(QUERY_EXECUTE_FAILED_MESSAGE, e);
         }
     }
 
@@ -60,7 +60,7 @@ public class JdbcTemplate {
             }
             return result;
         } catch (Exception e) {
-            throw new IllegalArgumentException(QUERY_EXECUTE_FAILED_MESSAGE);
+            throw new IllegalArgumentException(QUERY_EXECUTE_FAILED_MESSAGE, e);
         }
     }
 }

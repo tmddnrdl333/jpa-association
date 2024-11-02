@@ -23,13 +23,20 @@ public class SelectQuery {
     public String findById(Class<?> entityType, Object id) {
         final EntityTable entityTable = new EntityTable(entityType);
 
-        if (entityTable.isOneToManyAssociation()) {
+        if (entityTable.isOneToManyAssociation() && entityTable.isEager()) {
             return getAssociationQuery(entityTable)
                 .where(getColumnWithAliasClause(entityTable, entityTable.getIdColumnName()), id)
                     .build();
         }
         return findAll(entityTable)
                 .where(entityTable.getIdColumnName(), id)
+                .build();
+    }
+
+    public String findCollection(Class<?> entityType, String columnName, Object value) {
+        final EntityTable entityTable = new EntityTable(entityType);
+        return findAll(entityTable)
+                .where(columnName, value)
                 .build();
     }
 
@@ -54,6 +61,7 @@ public class SelectQuery {
     private String getSelectClause(EntityTable entityTable) {
         return entityTable.getEntityColumns()
                 .stream()
+                .filter(this::isNotNeeded)
                 .map(EntityColumn::getColumnName)
                 .collect(Collectors.joining(COLUMN_DELIMITER));
     }

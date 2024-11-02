@@ -18,3 +18,8 @@
 - [x] 요구사항 1 - Select Join Query 만들기 (EAGER)
 - [x] 요구사항 2 - Join Query 를 만들어 Entity 화 해보기
 - [x] 요구사항 3 - Save 시 Insert Query
+
+### 🚀 2단계 - Proxy
+
+- [x] 요구사항 1 - Dynamic Proxy 연습
+- [x] 요구사항 2 - Proxy 활용

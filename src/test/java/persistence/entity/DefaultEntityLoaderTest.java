@@ -8,10 +8,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import persistence.dialect.H2Dialect;
 import persistence.fixture.EntityWithId;
-import persistence.sql.ddl.CreateQuery;
-import persistence.sql.ddl.DropQuery;
 import persistence.sql.dml.DeleteQuery;
 import persistence.sql.dml.InsertQuery;
 import persistence.sql.dml.SelectQuery;
@@ -19,6 +16,7 @@ import persistence.sql.dml.UpdateQuery;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
+import static util.QueryUtils.*;
 
 class DefaultEntityLoaderTest {
     private JdbcTemplate jdbcTemplate;
@@ -84,26 +82,11 @@ class DefaultEntityLoaderTest {
         assertThat(managedOrder).isEqualTo(order);
     }
 
-    private void createTable(Class<?> entityType) {
-        final CreateQuery createQuery = new CreateQuery(entityType, new H2Dialect());
-        jdbcTemplate.execute(createQuery.create());
-    }
-
-    private void createTable(Class<?> entityType, Class<?> parentEntityType) {
-        final CreateQuery createQuery = new CreateQuery(entityType, new H2Dialect());
-        jdbcTemplate.execute(createQuery.create(parentEntityType));
-    }
-
     private void insertData(Object entity) {
         entityPersister.insert(entity);
     }
 
     private void insertData(Object entity, Object parentEntity) {
         entityPersister.insert(entity, parentEntity);
-    }
-
-    private void dropTable(Class<?> entityType) {
-        final DropQuery dropQuery = new DropQuery(entityType);
-        jdbcTemplate.execute(dropQuery.drop());
     }
 }

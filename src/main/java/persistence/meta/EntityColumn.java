@@ -1,5 +1,7 @@
 package persistence.meta;
 
+import jakarta.persistence.FetchType;
+
 import java.lang.reflect.Field;
 import java.util.Objects;
 
@@ -84,7 +86,15 @@ public class EntityColumn {
         return columnOption.isOneToManyAssociation();
     }
 
+    public FetchType getFetchType() {
+        return columnOption.getFetchType();
+    }
+
     public Class<?> getJoinColumnType() {
         return columnOption.getJoinColumnType();
+    }
+
+    public boolean isOneToManyAndLazy() {
+        return columnOption.isOneToManyAssociation() && columnOption.getFetchType() == FetchType.LAZY;
     }
 }
