@@ -56,12 +56,12 @@ class ProxyFactoryTest {
     void createProxyAndLazyLoading() {
         // given
         final ProxyFactory proxyFactory = new ProxyFactory();
-        final EntityLoader entityLoader = new DefaultEntityLoader(jdbcTemplate, new SelectQuery());
+        final EntityLoader entityLoader = new DefaultEntityLoader(jdbcTemplate, new SelectQuery(), new ProxyFactory());
         final OrderLazy managedOrder = entityLoader.load(OrderLazy.class, order.getId());
 
         // when
         final List<OrderItem> proxy = proxyFactory.createProxy(entityLoader, OrderItem.class, managedOrder);
-        proxy.get(0);
+        proxy.size();
 
         // then
         assertAll(

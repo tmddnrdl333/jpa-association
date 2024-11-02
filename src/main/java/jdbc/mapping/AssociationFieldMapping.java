@@ -7,6 +7,7 @@ import java.lang.reflect.Field;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -36,7 +37,14 @@ public class AssociationFieldMapping implements FieldMapping {
     private List<Object> getList(List<Field> fields, Object entity) throws IllegalAccessException {
         final Field listField = findListField(fields);
         listField.setAccessible(true);
-        return (List<Object>) listField.get(entity);
+
+        Object list = listField.get(entity);
+        if (list instanceof List<?>) {
+            final List<Object> newList = new ArrayList<>((List<?>) list);
+            listField.set(entity, newList);
+            return newList;
+        }
+        throw new ClassCastException();
     }
 
     private Object getChildEntity(ResultSet resultSet, Class<?> joinColumnType, List<Field> fields, Object entity) throws SQLException, IllegalAccessException {
@@ -52,7 +60,9 @@ public class AssociationFieldMapping implements FieldMapping {
             }
 
             Field childField = getField(getPersistentFields(joinColumnType), childFieldIndex);
-            mapField(resultSet, childEntity, childField, i + 1);
+            if (Objects.nonNull(childField)) {
+                mapField(resultSet, childEntity, childField, i + 1);
+            }
         }
         return childEntity;
     }

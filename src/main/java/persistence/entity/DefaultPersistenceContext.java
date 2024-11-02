@@ -90,6 +90,15 @@ public class DefaultPersistenceContext implements PersistenceContext {
         entityEntry.updateStatus(entityStatus);
     }
 
+    @Override
+    public void clear() {
+        entityRegistry.clear();
+        entitySnapshotRegistry.clear();
+        entityEntryRegistry.clear();
+        persistQueue.clear();
+        removeQueue.clear();
+    }
+
     private void addEntity(Object entity, EntityTable entityTable) {
         entityRegistry.put(entityTable.toEntityKey(), entity);
     }

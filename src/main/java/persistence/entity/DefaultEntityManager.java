@@ -1,12 +1,13 @@
 package persistence.entity;
 
 import jdbc.JdbcTemplate;
+import persistence.entity.proxy.ProxyFactory;
+import persistence.meta.EntityColumn;
+import persistence.meta.EntityTable;
 import persistence.sql.dml.DeleteQuery;
 import persistence.sql.dml.InsertQuery;
 import persistence.sql.dml.SelectQuery;
 import persistence.sql.dml.UpdateQuery;
-import persistence.meta.EntityColumn;
-import persistence.meta.EntityTable;
 
 import java.util.List;
 import java.util.Objects;
@@ -33,7 +34,7 @@ public class DefaultEntityManager implements EntityManager {
         return new DefaultEntityManager(
                 new DefaultPersistenceContext(),
                 new DefaultEntityPersister(jdbcTemplate, new InsertQuery(), new UpdateQuery(), new DeleteQuery()),
-                new DefaultEntityLoader(jdbcTemplate, new SelectQuery())
+                new DefaultEntityLoader(jdbcTemplate, new SelectQuery(), new ProxyFactory())
         );
     }
 
@@ -51,12 +52,20 @@ public class DefaultEntityManager implements EntityManager {
 
     @Override
     public void persist(Object entity) {
-        final EntityEntry entityEntry = persistenceContext.getEntityEntry(entity);
-        if (Objects.nonNull(entityEntry) && !entityEntry.isPersistable()) {
-            throw new IllegalStateException(NOT_PERSISTABLE_STATUS_FAILED_MESSAGE);
+        validatePersist(entity);
+        if (persistImmediately(entity)) {
+            return;
         }
 
-        if (persistImmediately(entity)) {
+        persistenceContext.addEntity(entity);
+        persistenceContext.createOrUpdateStatus(entity, EntityStatus.MANAGED);
+        persistenceContext.addToPersistQueue(entity);
+    }
+
+    @Override
+    public void persist(Object entity, Object parentEntity) {
+        validatePersist(entity);
+        if (persistImmediately(entity, parentEntity)) {
             return;
         }
 
@@ -83,10 +92,33 @@ public class DefaultEntityManager implements EntityManager {
         updateAll();
     }
 
+    @Override
+    public void clear() {
+        persistenceContext.clear();
+    }
+
+    private void validatePersist(Object entity) {
+        final EntityEntry entityEntry = persistenceContext.getEntityEntry(entity);
+        if (Objects.nonNull(entityEntry) && !entityEntry.isPersistable()) {
+            throw new IllegalStateException(NOT_PERSISTABLE_STATUS_FAILED_MESSAGE);
+        }
+    }
+
     private boolean persistImmediately(Object entity) {
         final EntityTable entityTable = new EntityTable(entity);
         if (entityTable.isIdGenerationFromDatabase()) {
             entityPersister.insert(entity);
+            persistenceContext.addEntity(entity);
+            persistenceContext.createOrUpdateStatus(entity, EntityStatus.MANAGED);
+            return true;
+        }
+        return false;
+    }
+
+    private boolean persistImmediately(Object entity, Object parentEntity) {
+        final EntityTable entityTable = new EntityTable(entity);
+        if (entityTable.isIdGenerationFromDatabase()) {
+            entityPersister.insert(entity, parentEntity);
             persistenceContext.addEntity(entity);
             persistenceContext.createOrUpdateStatus(entity, EntityStatus.MANAGED);
             return true;

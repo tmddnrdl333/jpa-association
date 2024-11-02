@@ -6,6 +6,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import persistence.entity.proxy.ProxyFactory;
 import persistence.fixture.EntityWithId;
 import persistence.meta.EntityTable;
 import persistence.sql.dml.DeleteQuery;
@@ -25,7 +26,7 @@ class DefaultEntityPersisterTest {
     @BeforeEach
     void setUp() {
         jdbcTemplate = new JdbcTemplate(H2ConnectionFactory.getConnection());
-        entityLoader = new DefaultEntityLoader(jdbcTemplate, new SelectQuery());
+        entityLoader = new DefaultEntityLoader(jdbcTemplate, new SelectQuery(), new ProxyFactory());
         entityManager = DefaultEntityManager.of(jdbcTemplate);
 
         createTable(EntityWithId.class);

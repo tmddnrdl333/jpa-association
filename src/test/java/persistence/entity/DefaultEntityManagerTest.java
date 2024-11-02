@@ -1,6 +1,8 @@
 package persistence.entity;
 
 import database.H2ConnectionFactory;
+import domain.OrderItem;
+import domain.OrderLazy;
 import jdbc.JdbcTemplate;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,11 +23,15 @@ class DefaultEntityManagerTest {
         jdbcTemplate = new JdbcTemplate(H2ConnectionFactory.getConnection());
 
         createTable(EntityWithId.class);
+        createTable(OrderLazy.class);
+        createTable(OrderItem.class, OrderLazy.class);
     }
 
     @AfterEach
     void tearDown() {
         dropTable(EntityWithId.class);
+        dropTable(OrderLazy.class);
+        dropTable(OrderItem.class);
     }
 
     @Test
@@ -47,6 +53,34 @@ class DefaultEntityManagerTest {
                 () -> assertThat(managedEntity.getAge()).isEqualTo(entity.getAge()),
                 () -> assertThat(managedEntity.getEmail()).isEqualTo(entity.getEmail()),
                 () -> assertThat(managedEntity.getIndex()).isNotNull()
+        );
+    }
+
+    @Test
+    @DisplayName("Lazy 연관관게를 가진 엔티티를 로드한다.")
+    void find_withLazyAssociation() {
+        // given
+        final EntityManager entityManager = DefaultEntityManager.of(jdbcTemplate);
+        final OrderLazy order = new OrderLazy("OrderNumber1");
+        final OrderItem orderItem1 = new OrderItem("Product1", 10);
+        final OrderItem orderItem2 = new OrderItem("Product2", 20);
+        order.addOrderItem(orderItem1);
+        order.addOrderItem(orderItem2);
+        insertData(order, entityManager);
+        insertData(orderItem1, order, entityManager);
+        insertData(orderItem2, order, entityManager);
+        entityManager.clear();
+
+        // when
+        final OrderLazy managedOrder = entityManager.find(order.getClass(), order.getId());
+
+        // then
+        assertAll(
+                () -> assertThat(managedOrder).isNotNull(),
+                () -> assertThat(managedOrder.getId()).isEqualTo(order.getId()),
+                () -> assertThat(managedOrder.getOrderNumber()).isEqualTo(order.getOrderNumber()),
+                () -> assertThat(managedOrder.getOrderItems()).hasSize(2),
+                () -> assertThat(managedOrder.getOrderItems()).containsExactly(orderItem1, orderItem2)
         );
     }
 
@@ -189,7 +223,11 @@ class DefaultEntityManagerTest {
         );
     }
 
-    private void insertData(EntityWithId entity, EntityManager entityManager) {
+    private void insertData(Object entity, EntityManager entityManager) {
         entityManager.persist(entity);
+    }
+
+    private void insertData(Object entity, Object parentEntity, EntityManager entityManager) {
+        entityManager.persist(entity, parentEntity);
     }
 }

@@ -7,9 +7,9 @@ import persistence.meta.EntityTable;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
 public class LazyLoadingHandler<T> implements InvocationHandler {
     private static final String NO_ONE_TO_ONE_LAZY_FAILED_MESSAGE = "@OneToMany 연관관계이면서 LAZY 타입인 컬럼이 존재하지 않습니다.";
@@ -32,11 +32,17 @@ public class LazyLoadingHandler<T> implements InvocationHandler {
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException(NO_ONE_TO_ONE_LAZY_FAILED_MESSAGE));
 
-        if (Objects.equals(method.getName(), LAZY_LOADING_METHOD_NAME)) {
+        final Object associationFieldValue = getAssociationFieldValue(associationField);
+        if (isNotLoaded(associationFieldValue)) {
             final List<T> loadedList = lazyLoad(associationField);
             return method.invoke(loadedList, args);
         }
-        return method.invoke(getAssociationFieldValue(associationField), args);
+        return method.invoke(associationFieldValue, args);
+    }
+
+    private boolean isOneToManyAndLazy(Field field) {
+        final EntityColumn entityColumn = new EntityColumn(field);
+        return entityColumn.isOneToManyAndLazy();
     }
 
     private Object getAssociationFieldValue(Field associationField) throws IllegalAccessException {
@@ -44,9 +50,8 @@ public class LazyLoadingHandler<T> implements InvocationHandler {
         return associationField.get(parentEntity);
     }
 
-    private boolean isOneToManyAndLazy(Field field) {
-        final EntityColumn entityColumn = new EntityColumn(field);
-        return entityColumn.isOneToManyAndLazy();
+    private boolean isNotLoaded(Object associationFieldValue) {
+        return Proxy.isProxyClass(associationFieldValue.getClass());
     }
 
     private List<T> lazyLoad(Field associationField) throws IllegalAccessException {

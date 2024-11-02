@@ -23,3 +23,8 @@
 
 - [x] 요구사항 1 - Dynamic Proxy 연습
 - [x] 요구사항 2 - Proxy 활용
+
+### 🚀 3단계 - OneToMany (FetchType.LAZY)
+
+- [x] 요구사항 1 - 로딩 전략에 따른 분기 (FetchType.LAZY)
+- [x] 요구사항 2 - Proxy 를 활용한 지연 로딩 구현

@@ -25,4 +25,6 @@ public interface PersistenceContext {
     EntityEntry getEntityEntry(Object entity);
 
     void createOrUpdateStatus(Object entity, EntityStatus entityStatus);
+
+    void clear();
 }
