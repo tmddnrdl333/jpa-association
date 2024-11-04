@@ -21,6 +21,10 @@ public class H2 implements DatabaseServer {
         this(DEFAULT_PROPERTIES);
     }
 
+    public H2(String schemaName) throws SQLException {
+        this(new DataSourceProperties("jdbc:h2:mem:%s;DB_CLOSE_DELAY=-1".formatted(schemaName), "sa", ""));
+    }
+
     public H2(final Server server) {
         this(server, DEFAULT_PROPERTIES);
     }
