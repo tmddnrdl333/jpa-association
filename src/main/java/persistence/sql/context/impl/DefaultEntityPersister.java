@@ -1,6 +1,7 @@
 package persistence.sql.context.impl;
 
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import persistence.annoation.DynamicUpdate;
 import persistence.sql.EntityLoaderFactory;
 import persistence.sql.QueryBuilderFactory;
@@ -17,9 +18,12 @@ import persistence.sql.loader.EntityLoader;
 
 import java.lang.reflect.Field;
 import java.sql.Connection;
+import java.util.Collection;
 import java.util.List;
+import java.util.logging.Logger;
 
 public class DefaultEntityPersister implements EntityPersister {
+    private static final Logger logger = Logger.getLogger(DefaultEntityPersister.class.getName());
     private final Database database;
     private final NameConverter nameConverter;
 
@@ -40,6 +44,21 @@ public class DefaultEntityPersister implements EntityPersister {
         InsertColumnValueClause clause = InsertColumnValueClause.newInstance(entity, nameConverter);
 
         String insertQuery = QueryBuilderFactory.getInstance().buildQuery(QueryType.INSERT, loader, clause);
+        Object id = database.executeUpdate(insertQuery);
+        updatePrimaryKeyValue(entity, id, loader);
+
+        return entity;
+    }
+
+    @Override
+    public <T> Object insert(T entity, T parentEntity) {
+        MetadataLoader<?> loader = getMetadataLoader(entity);
+
+        InsertColumnValueClause clause = InsertColumnValueClause.newInstance(entity, parentEntity, nameConverter);
+
+        String insertQuery = QueryBuilderFactory.getInstance().buildQuery(QueryType.INSERT, loader, clause);
+        logger.info("Entity: %s, Parent Entity: %s | insertQuery: %s".formatted(entity, parentEntity, insertQuery));
+
         Object id = database.executeUpdate(insertQuery);
         updatePrimaryKeyValue(entity, id, loader);
 

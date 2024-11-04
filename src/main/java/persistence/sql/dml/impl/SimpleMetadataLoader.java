@@ -1,9 +1,6 @@
 package persistence.sql.dml.impl;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
+import jakarta.persistence.*;
 import org.jetbrains.annotations.Nullable;
 import persistence.sql.common.util.NameConverter;
 import persistence.sql.dml.MetadataLoader;
@@ -79,6 +76,30 @@ public class SimpleMetadataLoader<T> implements MetadataLoader<T> {
     }
 
     @Override
+    public String getJoinColumnName(Field field, NameConverter nameConverter) {
+        Field foundField = Arrays.stream(clazz.getDeclaredFields())
+                .filter(this::isNotTransient)
+                .filter(field::equals)
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Field not found"));
+
+        return getJoinColumnNameByField(foundField, nameConverter);
+    }
+
+    private String getJoinColumnNameByField(Field field, NameConverter nameConverter) {
+        if (field.isAnnotationPresent(Transient.class)) {
+            return null;
+        }
+
+        JoinColumn anno = field.getAnnotation(JoinColumn.class);
+        if (anno != null && !anno.name().isBlank()) {
+            return anno.name();
+        }
+
+        return nameConverter.convert(field.getName());
+    }
+
+    @Override
     public String getFieldName(int index) {
         Field declaredField = getField(index);
 
@@ -102,6 +123,15 @@ public class SimpleMetadataLoader<T> implements MetadataLoader<T> {
 
         return IntStream.range(0, columnCount)
                 .mapToObj(index -> getColumnName(index, nameConverter))
+                .toList();
+    }
+
+    @Override
+    public List<String> getColumnNameAllWithAlias(NameConverter nameConverter) {
+        int columnCount = getColumnCount();
+
+        return IntStream.range(0, columnCount)
+                .mapToObj(index -> getTableAlias() + "." + getColumnName(index, nameConverter))
                 .toList();
     }
 
@@ -146,6 +176,16 @@ public class SimpleMetadataLoader<T> implements MetadataLoader<T> {
     @Override
     public boolean isClassAnnotationPresent(Class<? extends Annotation> targetAnno) {
         return clazz.isAnnotationPresent(targetAnno);
+    }
+
+    @Override
+    public String getTableAlias() {
+        return getTableName().toLowerCase();
+    }
+
+    @Override
+    public String getTableNameWithAlias() {
+        return getTableName() + " " + getTableAlias();
     }
 
     private boolean isNotTransient(Field field) {

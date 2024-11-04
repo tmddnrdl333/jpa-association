@@ -9,6 +9,7 @@ import persistence.sql.common.util.CamelToSnakeConverter;
 import persistence.sql.dml.Database;
 import persistence.sql.dml.TestEntityInitialize;
 import persistence.sql.dml.impl.SimpleMetadataLoader;
+import persistence.sql.fixture.TestOrder;
 import persistence.sql.fixture.TestPerson;
 
 import java.sql.SQLException;
@@ -20,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 class EntityLoaderTest extends TestEntityInitialize {
     private Database database;
     private EntityLoader<TestPerson> loader;
+    private EntityLoader<TestOrder> orderLoader;
 
     @BeforeEach
     void setUp() throws SQLException {
@@ -27,10 +29,15 @@ class EntityLoaderTest extends TestEntityInitialize {
         database = config.database();
 
         loader = new EntityLoader<>(TestPerson.class, database);
+        orderLoader = new EntityLoader<>(TestOrder.class, database);
+
         database.executeUpdate("INSERT INTO users (nick_name, old, email) VALUES ('catsbi', 55, 'catsbi@naver.com')");
         database.executeUpdate("INSERT INTO users (nick_name, old, email) VALUES ('crong', 7, 'crong@naver.com')");
         database.executeUpdate("INSERT INTO users (nick_name, old, email) VALUES ('pobi', 66, 'pobi@gmail.com')");
         database.executeUpdate("INSERT INTO users (nick_name, old, email) VALUES ('navicat', 32, 'navi@hanmail.net')");
+
+        database.executeUpdate("INSERT INTO orders (order_number) VALUES ('1')");
+        database.executeUpdate("INSERT INTO order_items (product, quantity, order_id) VALUES ('apple', 10, 1)");
     }
 
     @Test
@@ -77,6 +84,19 @@ class EntityLoaderTest extends TestEntityInitialize {
                 () -> assertThat(actual.getName()).isEqualTo("catsbi"),
                 () -> assertThat(actual.getAge()).isEqualTo(55),
                 () -> assertThat(actual.getEmail()).isEqualTo("catsbi@naver.com")
+        );
+    }
+
+    @Test
+    @DisplayName("load 함수를 통해 연관관계가 있는 특정 엔티티를 조회할 수 있다.")
+    void testLoadWithAssociation() {
+        // when
+        TestOrder actual = orderLoader.load(1L);
+
+        // then
+        assertAll(
+                () -> assertThat(actual).isNotNull(),
+                () -> assertThat(actual.getOrderNumber()).isEqualTo("1")
         );
     }
 }

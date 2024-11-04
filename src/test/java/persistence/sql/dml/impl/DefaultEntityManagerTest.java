@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Test;
 import persistence.config.TestPersistenceConfig;
 import persistence.sql.dml.EntityManager;
 import persistence.sql.dml.TestEntityInitialize;
+import persistence.sql.fixture.TestOrder;
+import persistence.sql.fixture.TestOrderItem;
 import persistence.sql.fixture.TestPerson;
 
 import java.sql.SQLException;
@@ -179,4 +181,30 @@ class DefaultEntityManagerTest extends TestEntityInitialize {
         TestPerson loadedEntity = entityManager.find(TestPerson.class, 1L);
         assertThat(loadedEntity.getName()).isEqualTo("newCatsbi");
     }
+
+    @Test
+    @DisplayName("persist 함수는 연관관계 엔티티가 있고 영속성 전이 Persis 전략인 경우 경우 연관관계 엔티티도 함께 저장한다.")
+    void testPersistWithCascadePersist() {
+        // given
+        TestOrder testOrder = new TestOrder("order1");
+        TestOrderItem apple = new TestOrderItem("apple", 10);
+        TestOrderItem grape = new TestOrderItem("grape", 20);
+        testOrder.addOrderItem(apple);
+        testOrder.addOrderItem(grape);
+
+        entityManager.persist(testOrder);
+        entityManager.getTransaction().begin();
+        entityManager.getTransaction().commit();
+
+        // when
+        TestOrder actual = entityManager.find(TestOrder.class, testOrder.getId());
+
+        // then
+        assertAll(
+                () -> assertThat(actual).isNotNull(),
+                () -> assertThat(actual.getOrderItems()).hasSize(2),
+                () -> assertThat(actual.getOrderItems()).containsAll(List.of(apple, grape))
+        );
+    }
+
 }

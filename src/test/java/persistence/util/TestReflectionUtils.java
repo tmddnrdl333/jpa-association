@@ -2,9 +2,9 @@ package persistence.util;
 
 import java.lang.reflect.Field;
 
-public class ReflectionUtils {
+public class TestReflectionUtils {
 
-    private ReflectionUtils() {
+    private TestReflectionUtils() {
     }
 
     @SuppressWarnings("unchecked")

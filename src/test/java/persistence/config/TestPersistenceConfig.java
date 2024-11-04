@@ -8,6 +8,7 @@ import persistence.sql.context.EntityPersister;
 import persistence.sql.context.PersistenceContext;
 import persistence.sql.context.impl.DefaultEntityPersister;
 import persistence.sql.context.impl.DefaultPersistenceContext;
+import persistence.sql.ddl.JoinTargetScanner;
 import persistence.sql.ddl.QueryColumnSupplier;
 import persistence.sql.ddl.QueryConstraintSupplier;
 import persistence.sql.ddl.TableScanner;
@@ -38,6 +39,10 @@ public class TestPersistenceConfig {
 
     public TableScanner tableScanner() {
         return new AnnotatedTableScanner();
+    }
+
+    public JoinTargetScanner joinTargetScanner() {
+        return new AnnotatedJoinTargetScanner();
     }
 
     public NameConverter nameConverter() {

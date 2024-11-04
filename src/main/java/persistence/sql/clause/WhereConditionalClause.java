@@ -12,6 +12,10 @@ public record WhereConditionalClause(String column, String value, String operato
         }
     }
 
+    public static WhereExpression builder(String tableAlias) {
+        return new WhereExpression(tableAlias);
+    }
+
     public static WhereExpression builder() {
         return new WhereExpression();
     }
@@ -22,12 +26,25 @@ public record WhereConditionalClause(String column, String value, String operato
     }
 
     public static class WhereExpression {
+        private final String tableAlias;
         private String column;
         private String value;
         private String operator;
 
+        public WhereExpression() {
+            this(null);
+        }
+
+        public WhereExpression(String tableAlias) {
+            this.tableAlias = tableAlias;
+        }
+
         public WhereExpression column(String column) {
-            this.column = column;
+            if (tableAlias != null) {
+                this.column = "%s.%s".formatted(tableAlias, column);
+            } else {
+                this.column = column;
+            }
             return this;
         }
 

@@ -9,6 +9,8 @@ import persistence.sql.clause.WhereConditionalClause;
 import persistence.sql.common.util.CamelToSnakeConverter;
 import persistence.sql.data.QueryType;
 import persistence.sql.dml.MetadataLoader;
+import persistence.sql.fixture.TestOrder;
+import persistence.sql.fixture.TestOrderItem;
 import persistence.sql.fixture.TestPerson;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,6 +33,23 @@ class InsertQueryBuilderTest {
 
         // then
         assertThat(query).isEqualTo("INSERT INTO users (nick_name, old, email) VALUES ('catsbi', 55, 'catsbi@naver.com')");
+    }
+
+
+    @Test
+    @DisplayName("build 함수는 해당 엔티티를 참조하는 엔티티가 있는경우 해당 참조하는 엔티티의 외래키를 추가한 insert query를 생성한다.")
+    void testInsertQueryBuildWithParentEntity() {
+        // given
+        TestOrder testOrder = new TestOrder("order1");
+        TestOrderItem apple = new TestOrderItem("apple", 10);
+        TestOrderItem grape = new TestOrderItem("grape", 20);
+        testOrder.addOrderItem(apple);
+        testOrder.addOrderItem(grape);
+
+        InsertColumnValueClause clause = InsertColumnValueClause.newInstance(apple, testOrder, CamelToSnakeConverter.getInstance());
+
+        System.out.println("clause = " + clause.clause());
+
     }
 
     @Test

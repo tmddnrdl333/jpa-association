@@ -10,8 +10,11 @@ import persistence.sql.EntityLoaderFactory;
 import persistence.sql.QueryBuilderFactory;
 import persistence.sql.config.PersistenceConfig;
 import persistence.sql.data.QueryType;
+import persistence.sql.ddl.JoinTargetScanner;
 import persistence.sql.ddl.TableScanner;
+import persistence.sql.ddl.impl.JoinTargetDefinition;
 import persistence.sql.dml.impl.SimpleMetadataLoader;
+import persistence.sql.holder.JoinTargetHolder;
 import persistence.sql.node.EntityNode;
 
 import java.util.Set;
@@ -29,6 +32,13 @@ public class TestEntityInitialize {
         }
     }
 
+    private void initJoinTargetHolder(Set<JoinTargetDefinition> joinTargets) {
+        JoinTargetHolder holder = JoinTargetHolder.getInstance();
+        for (JoinTargetDefinition joinTarget : joinTargets) {
+            holder.add(joinTarget);
+        }
+    }
+
     @BeforeEach
     void init() {
         try {
@@ -40,6 +50,10 @@ public class TestEntityInitialize {
             TableScanner tableScanner = config.tableScanner();
             nodes = tableScanner.scan("persistence.sql.fixture");
             initEntityLoaderFactory(nodes, database);
+
+            JoinTargetScanner joinTargetScanner = config.joinTargetScanner();
+            Set<JoinTargetDefinition> joinTargets = joinTargetScanner.scan("persistence.sql.fixture");
+            initJoinTargetHolder(joinTargets);
 
             QueryBuilderFactory factory = QueryBuilderFactory.getInstance();
             for (EntityNode<?> node : nodes) {

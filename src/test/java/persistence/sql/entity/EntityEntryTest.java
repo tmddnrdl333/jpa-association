@@ -12,7 +12,7 @@ import persistence.sql.dml.impl.SimpleMetadataLoader;
 import persistence.sql.entity.data.Status;
 import persistence.sql.fixture.TestPerson;
 import persistence.sql.fixture.TestPersonNoGenerateValue;
-import persistence.util.ReflectionUtils;
+import persistence.util.TestReflectionUtils;
 
 import java.lang.reflect.Field;
 import java.util.stream.Stream;
@@ -81,7 +81,7 @@ class EntityEntryTest extends TestEntityInitialize {
         entry.synchronizingSnapshot();
 
         Object snapshot = entry.getSnapshot();
-        Object actual = ReflectionUtils.getFieldValue(snapshot, "name");
+        Object actual = TestReflectionUtils.getFieldValue(snapshot, "name");
 
         // then
         assertThat(actual).isEqualTo(expectedName);
@@ -100,8 +100,8 @@ class EntityEntryTest extends TestEntityInitialize {
         entry.synchronizingSnapshot();
 
         Object snapshot = entry.getSnapshot();
-        Object actualId = ReflectionUtils.getFieldValue(snapshot, "id");
-        Object actualIndex = ReflectionUtils.getFieldValue(snapshot, "index");
+        Object actualId = TestReflectionUtils.getFieldValue(snapshot, "id");
+        Object actualIndex = TestReflectionUtils.getFieldValue(snapshot, "index");
 
 
         // then
@@ -202,7 +202,7 @@ class EntityEntryTest extends TestEntityInitialize {
         EntityEntry entityNullEntry = createDummyEntry();
         entityNullEntry.updateEntity(null);
         EntityEntry snapshotNullEntry = createDummyEntry();
-        ReflectionUtils.setFieldValue(snapshotNullEntry, "snapshot", null);
+        TestReflectionUtils.setFieldValue(snapshotNullEntry, "snapshot", null);
 
         return Stream.of(
                 Arguments.of(entityNullEntry),

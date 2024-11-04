@@ -37,6 +37,8 @@ public interface MetadataLoader<T> {
 
     String getColumnName(Field field, NameConverter nameConverter);
 
+    String getJoinColumnName(Field field, NameConverter nameConverter);
+
     /**
      * 필드명을 조회해 반환한다.
      */
@@ -86,4 +88,10 @@ public interface MetadataLoader<T> {
      * @param targetAnno 확인할 클래스
      */
     boolean isClassAnnotationPresent(Class<? extends Annotation> targetAnno);
+
+    String getTableAlias();
+
+    String getTableNameWithAlias();
+
+    List<String> getColumnNameAllWithAlias(NameConverter nameConverter);
 }

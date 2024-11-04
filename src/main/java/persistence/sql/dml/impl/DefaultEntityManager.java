@@ -1,6 +1,8 @@
 package persistence.sql.dml.impl;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.EntityExistsException;
+import jakarta.persistence.OneToMany;
 import persistence.sql.EntityLoaderFactory;
 import persistence.sql.clause.Clause;
 import persistence.sql.context.EntityPersister;
@@ -15,6 +17,8 @@ import persistence.sql.transaction.impl.EntityTransaction;
 
 import java.lang.reflect.Field;
 import java.sql.Connection;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 public class DefaultEntityManager implements EntityManager {
@@ -49,8 +53,75 @@ public class DefaultEntityManager implements EntityManager {
         }
         entityPersister.insert(entity);
         EntityEntry entityEntry = persistenceContext.addEntry(entity, Status.SAVING, entityPersister);
+
+        if (existsPersistChildEntity(entity)) {
+            persistChildEntity(entity);
+        }
+
         if (!transaction.isActive()) {
             entityEntry.updateStatus(Status.MANAGED);
+        }
+    }
+
+    private <T> void persistChildEntity(T entity) {
+        MetadataLoader<?> loader = entityLoaderFactory.getLoader(entity.getClass()).getMetadataLoader();
+        List<Field> fields = loader.getFieldAllByPredicate(this::isCascadePersist);
+
+        for (Field field : fields) {
+            persistChildEntities(entity, field);
+        }
+    }
+
+    private <T> void persistChildEntities(T entity, Field field) {
+        try {
+            field.setAccessible(true);
+            Collection<?> childEntities = (Collection<?>) field.get(entity);
+
+            if (childEntities == null || childEntities.isEmpty()) {
+                return;
+            }
+
+            childEntities.forEach(childEntity -> {
+                if (isNew(childEntity)) {
+                    entityPersister.insert(childEntity, entity);
+                    EntityEntry entityEntry = persistenceContext.addEntry(childEntity, Status.SAVING, entityPersister);
+
+                    if (!transaction.isActive()) {
+                        entityEntry.updateStatus(Status.MANAGED);
+                    }
+                }
+            });
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+    }
+
+    private <T> boolean existsPersistChildEntity(T entity) {
+        EntityLoader<?> entityLoader = entityLoaderFactory.getLoader(entity.getClass());
+        MetadataLoader<?> loader = entityLoader.getMetadataLoader();
+        List<Field> fields = loader.getFieldAllByPredicate(this::isCascadePersist);
+
+        return fields.stream().anyMatch(field -> isNotEmptyField(entity, field));
+    }
+
+    private boolean isCascadePersist(Field field) {
+        OneToMany anno = field.getAnnotation(OneToMany.class);
+
+        return anno != null
+                && Arrays.stream(anno.cascade())
+                .anyMatch(cascadeType -> CascadeType.PERSIST == cascadeType);
+    }
+
+    private <T> boolean isNotEmptyField(T entity, Field field) {
+        try {
+            field.setAccessible(true);
+            Object value = field.get(entity);
+
+            return Collection.class.isAssignableFrom(field.getType()) && !((Collection<?>) value).isEmpty();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 

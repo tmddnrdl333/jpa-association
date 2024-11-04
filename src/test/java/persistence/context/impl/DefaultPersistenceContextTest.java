@@ -13,7 +13,7 @@ import persistence.sql.entity.EntityEntry;
 import persistence.sql.entity.data.Status;
 import persistence.sql.fixture.TestPerson;
 import persistence.sql.loader.EntityLoader;
-import persistence.util.ReflectionUtils;
+import persistence.util.TestReflectionUtils;
 
 import java.sql.SQLException;
 import java.util.Map;
@@ -100,7 +100,7 @@ class DefaultPersistenceContextTest extends TestEntityInitialize {
                 catsbiEntity,
                 null,
                 new KeyHolder(TestPerson.class, catsbiEntity.getId()));
-        Map<KeyHolder, EntityEntry> entryMap = ReflectionUtils.getFieldValue(context, "context");
+        Map<KeyHolder, EntityEntry> entryMap = TestReflectionUtils.getFieldValue(context, "context");
         entryMap.put(entityEntry.getKey(), entityEntry);
 
         //when
