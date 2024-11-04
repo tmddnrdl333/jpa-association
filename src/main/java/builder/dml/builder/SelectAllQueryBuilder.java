@@ -1,21 +1,35 @@
 package builder.dml.builder;
 
+import builder.dml.QueryBuildUtil;
 import builder.dml.EntityData;
+import builder.dml.JoinEntityData;
 
 public class SelectAllQueryBuilder {
 
-    private final static String FIND_ALL_QUERY = "SELECT {columnNames} FROM {tableName};";
-    private final static String TABLE_NAME = "{tableName}";
-    private final static String COLUMN_NAMES = "{columnNames}";
-
-    public String buildQuery(EntityData EntityData) {
-        return findAllQuery(EntityData);
+    public String buildQuery(EntityData entityData) {
+        return findAllQuery(entityData);
     }
 
     //findAll 쿼리문을 생성한다.
-    private String findAllQuery(EntityData EntityData) {
-        return FIND_ALL_QUERY.replace(TABLE_NAME, EntityData.getTableName())
-                .replace(COLUMN_NAMES, EntityData.getColumnNames());
+    private String findAllQuery(EntityData entityData) {
+
+        if (entityData.checkJoin()) {
+            JoinEntityData joinEntityData = entityData.getJoinEntity().getJoinEntityData().getFirst();
+            return new SelectQueryBuilder()
+                    .select(QueryBuildUtil.getColumnNames(entityData))
+                    .from(QueryBuildUtil.getTableName(entityData))
+                    .join(QueryBuildUtil.getContainAliasTableName(joinEntityData.getTableName(), joinEntityData.getAlias()))
+                    .on(
+                            QueryBuildUtil.getContainAliasColumnName(entityData.getPkNm(), entityData.getAlias()),
+                            QueryBuildUtil.getContainAliasColumnName(joinEntityData.getJoinColumnName(), joinEntityData.getAlias())
+                    )
+                    .build();
+        }
+
+        return new SelectQueryBuilder()
+                .select(QueryBuildUtil.getColumnNames(entityData))
+                .from(QueryBuildUtil.getTableName(entityData))
+                .build();
     }
 
 }
