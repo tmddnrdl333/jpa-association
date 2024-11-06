@@ -81,19 +81,21 @@ public class DefaultEntityManager implements EntityManager {
                 return;
             }
 
-            childEntities.forEach(childEntity -> {
-                if (isNew(childEntity)) {
-                    entityPersister.insert(childEntity, entity);
-                    EntityEntry entityEntry = persistenceContext.addEntry(childEntity, Status.SAVING, entityPersister);
-
-                    if (!transaction.isActive()) {
-                        entityEntry.updateStatus(Status.MANAGED);
-                    }
-                }
-            });
+            childEntities.forEach(childEntity -> persistIfIsNewChildEntity(entity, childEntity));
         } catch (IllegalAccessException e) {
             e.printStackTrace();
             throw new RuntimeException(e);
+        }
+    }
+
+    private <T> void persistIfIsNewChildEntity(T entity, Object childEntity) {
+        if (isNew(childEntity)) {
+            entityPersister.insert(childEntity, entity);
+            EntityEntry entityEntry = persistenceContext.addEntry(childEntity, Status.SAVING, entityPersister);
+
+            if (!transaction.isActive()) {
+                entityEntry.updateStatus(Status.MANAGED);
+            }
         }
     }
 
@@ -208,6 +210,10 @@ public class DefaultEntityManager implements EntityManager {
         if (loadedEntity != null) {
             entry.updateEntity(loadedEntity);
             entry.updateStatus(Status.MANAGED);
+        }
+
+        if (entityLoader.existLazyLoading()) {
+            entityLoader.updateLazyLoadingField(loadedEntity, persistenceContext);
         }
 
         return loadedEntity;

@@ -5,6 +5,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import persistence.TestUtils;
 import persistence.config.TestPersistenceConfig;
+import persistence.proxy.ProxyFactory;
 import persistence.sql.dml.Database;
 import persistence.sql.fixture.TestPerson;
 import persistence.sql.loader.EntityLoader;
@@ -17,11 +18,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("EntityLoaderFactory 테스트")
 class EntityLoaderFactoryTest {
     private Database database;
+    private ProxyFactory proxyFactory;
 
     @BeforeEach
     void setUp() throws SQLException, NoSuchFieldException, IllegalAccessException {
         TestPersistenceConfig config = TestPersistenceConfig.getInstance();
         database = config.database();
+        proxyFactory = config.proxyFactory();
 
         // Spring Test Context 프레임워크의 ReflectionTestUtils 대용으로 직접 필드에 접근하여 초기화
         Map<Class<?>, EntityLoader<?>> context
@@ -47,7 +50,7 @@ class EntityLoaderFactoryTest {
         EntityLoaderFactory factory = EntityLoaderFactory.getInstance();
 
         // when
-        factory.addLoader(TestPerson.class, database);
+        factory.addLoader(TestPerson.class, database, proxyFactory);
         EntityLoader<TestPerson> actual = factory.getLoader(TestPerson.class);
 
         // when, then

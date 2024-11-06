@@ -2,6 +2,8 @@ package persistence.sql.config;
 
 import database.DatabaseServer;
 import database.H2;
+import persistence.proxy.ProxyFactory;
+import persistence.proxy.impl.JdkProxyFactory;
 import persistence.sql.common.util.CamelToSnakeConverter;
 import persistence.sql.common.util.NameConverter;
 import persistence.sql.context.EntityPersister;
@@ -25,6 +27,7 @@ public class PersistenceConfig {
     private static final PersistenceConfig INSTANCE = new PersistenceConfig();
 
     private DatabaseServer databaseServer;
+    private PersistenceContext persistenceContext;
 
     private PersistenceConfig() {
     }
@@ -69,7 +72,10 @@ public class PersistenceConfig {
     }
 
     public PersistenceContext persistenceContext() throws SQLException {
-        return new DefaultPersistenceContext();
+        if (persistenceContext == null) {
+            persistenceContext = new DefaultPersistenceContext();
+        }
+        return persistenceContext;
     }
 
     public Database database() throws SQLException {
@@ -82,5 +88,9 @@ public class PersistenceConfig {
             return databaseServer;
         }
         return databaseServer;
+    }
+
+    public ProxyFactory proxyFactory() {
+        return new JdkProxyFactory();
     }
 }

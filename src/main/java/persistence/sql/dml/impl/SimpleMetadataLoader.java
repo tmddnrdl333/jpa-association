@@ -87,10 +87,6 @@ public class SimpleMetadataLoader<T> implements MetadataLoader<T> {
     }
 
     private String getJoinColumnNameByField(Field field, NameConverter nameConverter) {
-        if (field.isAnnotationPresent(Transient.class)) {
-            return null;
-        }
-
         JoinColumn anno = field.getAnnotation(JoinColumn.class);
         if (anno != null && !anno.name().isBlank()) {
             return anno.name();

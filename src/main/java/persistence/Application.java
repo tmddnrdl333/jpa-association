@@ -5,6 +5,7 @@ import database.H2;
 import jdbc.JdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import persistence.proxy.ProxyFactory;
 import persistence.sql.EntityLoaderFactory;
 import persistence.sql.QueryBuilderFactory;
 import persistence.sql.config.PersistenceConfig;
@@ -31,7 +32,7 @@ public class Application {
 
             TableScanner tableScanner = persistenceConfig.tableScanner();
             Set<EntityNode<?>> nodes = tableScanner.scan(BASE_PACKAGE);
-            initEntityLoaderFactory(nodes, persistenceConfig.database());
+            initEntityLoaderFactory(nodes, persistenceConfig.database(), persistenceConfig.proxyFactory());
 
             QueryBuilderFactory factory = QueryBuilderFactory.getInstance();
             for (EntityNode<?> node : nodes) {
@@ -55,11 +56,11 @@ public class Application {
         }
     }
 
-    private static void initEntityLoaderFactory(Set<EntityNode<?>> nodes, Database database) {
+    private static void initEntityLoaderFactory(Set<EntityNode<?>> nodes, Database database, ProxyFactory proxyFactory) {
         EntityLoaderFactory factory = EntityLoaderFactory.getInstance();
 
         for (EntityNode<?> node : nodes) {
-            factory.addLoader(node.entityClass(), database);
+            factory.addLoader(node.entityClass(), database, proxyFactory);
         }
     }
 }

@@ -39,7 +39,7 @@ class QueryBuilderFactoryTest {
         setClauses.add(idClause);
 
         return Stream.of(
-                Arguments.of(QueryType.SELECT, "SELECT id, nick_name, old, email FROM users WHERE id = 1", List.of(idClause)),
+                Arguments.of(QueryType.SELECT, "SELECT users.id, users.nick_name, users.old, users.email,  FROM users users WHERE id = 1", List.of(idClause)),
                 Arguments.of(QueryType.INSERT, "INSERT INTO users (nick_name, old, email) VALUES ('catsbi', 55, 'catsbi@naver.com')", List.of(InsertColumnValueClause.newInstance(person, CamelToSnakeConverter.getInstance()))),
                 Arguments.of(QueryType.UPDATE, "UPDATE users SET nick_name = 'catsbi', old = 55, email = 'catsbi@naver.com' WHERE id = 1", setClauses),
                 Arguments.of(QueryType.DELETE, "DELETE FROM users WHERE id = 1", List.of(idClause))

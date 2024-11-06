@@ -1,5 +1,6 @@
 package persistence.sql;
 
+import persistence.proxy.ProxyFactory;
 import persistence.sql.dml.Database;
 import persistence.sql.loader.EntityLoader;
 
@@ -18,12 +19,12 @@ public class EntityLoaderFactory {
         return INSTANCE;
     }
 
-    public <T> void addLoader(Class<T> entityType, Database database) {
+    public <T> void addLoader(Class<T> entityType, Database database, ProxyFactory proxyFactory) {
         if (context.containsKey(entityType)) {
             return;
         }
 
-        context.put(entityType, new EntityLoader<>(entityType, database));
+        context.put(entityType, new EntityLoader<>(entityType, database, proxyFactory));
     }
 
     @SuppressWarnings("unchecked")

@@ -5,6 +5,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import persistence.TestUtils;
 import persistence.config.TestPersistenceConfig;
+import persistence.proxy.ProxyFactory;
 import persistence.sql.common.util.CamelToSnakeConverter;
 import persistence.sql.dml.Database;
 import persistence.sql.dml.TestEntityInitialize;
@@ -22,14 +23,16 @@ class EntityLoaderTest extends TestEntityInitialize {
     private Database database;
     private EntityLoader<TestPerson> loader;
     private EntityLoader<TestOrder> orderLoader;
+    private ProxyFactory proxyFactory;
 
     @BeforeEach
     void setUp() throws SQLException {
         TestPersistenceConfig config = TestPersistenceConfig.getInstance();
+        proxyFactory = config.proxyFactory();
         database = config.database();
 
-        loader = new EntityLoader<>(TestPerson.class, database);
-        orderLoader = new EntityLoader<>(TestOrder.class, database);
+        loader = new EntityLoader<>(TestPerson.class, database, proxyFactory);
+        orderLoader = new EntityLoader<>(TestOrder.class, database, proxyFactory);
 
         database.executeUpdate("INSERT INTO users (nick_name, old, email) VALUES ('catsbi', 55, 'catsbi@naver.com')");
         database.executeUpdate("INSERT INTO users (nick_name, old, email) VALUES ('crong', 7, 'crong@naver.com')");
@@ -44,7 +47,7 @@ class EntityLoaderTest extends TestEntityInitialize {
     @DisplayName("생성자는 기본 메타데이터 로더와 이름 변환기를 이용해 객체를 생성할 수 있다.")
     void testConstructor() throws NoSuchFieldException, IllegalAccessException {
         // when
-        EntityLoader<TestPerson> loader = new EntityLoader<>(TestPerson.class, database);
+        EntityLoader<TestPerson> loader = new EntityLoader<>(TestPerson.class, database, proxyFactory);
 
         Object actualNameConverter = TestUtils.getValueByFieldName(loader, "nameConverter");
 

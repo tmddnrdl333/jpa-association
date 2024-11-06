@@ -5,13 +5,19 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import persistence.config.TestPersistenceConfig;
+import persistence.sql.context.PersistenceContext;
 import persistence.sql.dml.EntityManager;
 import persistence.sql.dml.TestEntityInitialize;
+import persistence.sql.fixture.LazyTestOrder;
+import persistence.sql.fixture.LazyTestOrderItem;
 import persistence.sql.fixture.TestOrder;
 import persistence.sql.fixture.TestOrderItem;
 import persistence.sql.fixture.TestPerson;
+import persistence.util.TestReflectionUtils;
 
+import java.lang.reflect.Proxy;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -21,11 +27,13 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 @DisplayName("DefaultEntityManager 테스트")
 class DefaultEntityManagerTest extends TestEntityInitialize {
     private EntityManager entityManager;
+    private PersistenceContext persistenceContext;
 
     @BeforeEach
     void setUp() throws SQLException {
         TestPersistenceConfig config = TestPersistenceConfig.getInstance();
         entityManager = config.entityManager();
+        persistenceContext = config.persistenceContext();
     }
 
     @Test
@@ -204,6 +212,33 @@ class DefaultEntityManagerTest extends TestEntityInitialize {
                 () -> assertThat(actual).isNotNull(),
                 () -> assertThat(actual.getOrderItems()).hasSize(2),
                 () -> assertThat(actual.getOrderItems()).containsAll(List.of(apple, grape))
+        );
+    }
+
+    @Test
+    @DisplayName("find 함수는 연관관계 엔티티가 있고, 지연로딩 객체가 있는 경우 프록시 객체로 값을 설정해 반환한다.")
+    void testFindWithLazyLoading() {
+        // given
+        LazyTestOrder testOrder = new LazyTestOrder("order1");
+        LazyTestOrderItem apple = new LazyTestOrderItem("apple", 10);
+        LazyTestOrderItem grape = new LazyTestOrderItem("grape", 20);
+        testOrder.addOrderItem(apple);
+        testOrder.addOrderItem(grape);
+
+        entityManager.persist(testOrder);
+        TestReflectionUtils.setFieldValue(persistenceContext, "context", new HashMap<>());
+        TestReflectionUtils.setFieldValue(persistenceContext, "collectionContext", new HashMap<>());
+
+        // when
+        LazyTestOrder actual = entityManager.find(LazyTestOrder.class, testOrder.getId());
+
+        // then
+        assertAll(
+                () -> assertThat(actual.getOrderItems()).isInstanceOf(Proxy.class),
+                () -> assertThat(actual).isNotNull(),
+                () -> assertThat(actual.getOrderItems().size()).isEqualTo(0),
+                () -> assertThat(actual.getOrderItems()).containsAll(List.of(apple, grape)),
+                () -> assertThat(actual.getOrderItems().size()).isEqualTo(2)
         );
     }
 

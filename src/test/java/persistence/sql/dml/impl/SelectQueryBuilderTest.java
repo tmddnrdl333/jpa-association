@@ -28,28 +28,28 @@ class SelectQueryBuilderTest {
         String query = builder.build(loader, clause);
 
         // then
-        assertThat(query).isEqualTo("SELECT id, nick_name, old, email FROM users WHERE id = 1");
+        assertThat(query).isEqualTo("SELECT users.id, users.nick_name, users.old, users.email,  FROM users users WHERE id = 1");
     }
 
     @Test
     @DisplayName("build 함수는 연관관계를 고려해 SELECT 쿼리를 생성한다.")
     void testSelectQueryBuildWithAssociation() {
         // given
-        WhereConditionalClause clause = WhereConditionalClause.builder().column("id").eq("1");
+        WhereConditionalClause clause = WhereConditionalClause.builder().column("orders.id").eq("1");
         LeftJoinClause leftJoinClause = LeftJoinClause.of(TestOrder.class, TestOrderItem.class);
 
         // when
         String query = builder.build(testOrderLoader, clause, leftJoinClause);
 
         // then
-        assertThat(query).isEqualTo("SELECT testorder.id, " +
-                "testorder.order_number, " +
-                "testorder.order_items, " +
-                "testorderitem.id, " +
-                "testorderitem.product, " +
-                "testorderitem.quantity " +
-                "FROM orders testorder " +
-                "LEFT JOIN order_items testorderitem ON testorder.id = testorderitem.id " +
-                "WHERE id = 1");
+        assertThat(query).isEqualTo("SELECT orders.id, " +
+                "orders.order_number," +
+                " order_items.id," +
+                " order_items.product," +
+                " order_items.quantity" +
+                " FROM orders orders " +
+                "LEFT JOIN order_items order_items " +
+                "ON orders.id = order_items.order_id " +
+                "WHERE orders.id = 1");
     }
 }

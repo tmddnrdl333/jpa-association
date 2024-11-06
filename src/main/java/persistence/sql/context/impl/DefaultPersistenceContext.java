@@ -1,16 +1,22 @@
 package persistence.sql.context.impl;
 
+import persistence.sql.context.CollectionKeyHolder;
 import persistence.sql.context.EntityPersister;
 import persistence.sql.context.KeyHolder;
 import persistence.sql.context.PersistenceContext;
+import persistence.sql.entity.CollectionEntry;
 import persistence.sql.entity.EntityEntry;
 import persistence.sql.entity.data.Status;
 
+import java.io.Serializable;
+import java.util.AbstractCollection;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
 public class DefaultPersistenceContext implements PersistenceContext {
     private final Map<KeyHolder, EntityEntry> context = new HashMap<>();
+    private final Map<CollectionKeyHolder, CollectionEntry> collectionContext = new HashMap<>();
 
     @Override
     public <T> EntityEntry addEntry(T entity, Status status, EntityPersister entityPersister) {
@@ -37,6 +43,22 @@ public class DefaultPersistenceContext implements PersistenceContext {
         }
 
         return null;
+    }
+
+    @Override
+    public CollectionEntry getCollectionEntry(CollectionKeyHolder keyHolder) {
+        if (collectionContext.containsKey(keyHolder)) {
+            return collectionContext.get(keyHolder);
+        }
+
+        return null;
+    }
+
+    @Override
+    public CollectionEntry addCollectionEntry(CollectionKeyHolder keyHolder, CollectionEntry collectionEntry) {
+        collectionContext.put(keyHolder, collectionEntry);
+
+        return collectionEntry;
     }
 
     @Override

@@ -1,12 +1,16 @@
 package persistence.sql.fixture;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 import java.util.Objects;
 
 @Entity
-@Table(name = "order_items")
-public class TestOrderItem {
+@Table(name = "lazy_order_items")
+public class LazyTestOrderItem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -16,14 +20,14 @@ public class TestOrderItem {
 
     private Integer quantity;
 
-    public TestOrderItem() {
+    public LazyTestOrderItem() {
     }
 
-    public TestOrderItem(String product, Integer quantity) {
+    public LazyTestOrderItem(String product, Integer quantity) {
         this(null, product, quantity);
     }
 
-    public TestOrderItem(Long id, String product, Integer quantity) {
+    public LazyTestOrderItem(Long id, String product, Integer quantity) {
         this.id = id;
         this.product = product;
         this.quantity = quantity;
@@ -61,7 +65,7 @@ public class TestOrderItem {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        TestOrderItem that = (TestOrderItem) o;
+        LazyTestOrderItem that = (LazyTestOrderItem) o;
         return Objects.equals(id, that.id) && Objects.equals(product, that.product) && Objects.equals(quantity, that.quantity);
     }
 

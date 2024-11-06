@@ -67,7 +67,7 @@ class DefaultPersistenceContextTest extends TestEntityInitialize {
     @DisplayName("getEntry 함수는 유효하지 않은 식별자를 전달하면 null을 반환한다.")
     void testGetEntryWithInvalidId() {
         // when
-        EntityEntry actual = context.getEntry(TestPerson.class, 1L);
+        EntityEntry actual = context.getEntry(TestPerson.class, 999L);
 
         assertThat(actual).isNull();
     }

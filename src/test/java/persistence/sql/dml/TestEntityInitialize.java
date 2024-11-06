@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import persistence.config.TestPersistenceConfig;
+import persistence.proxy.ProxyFactory;
 import persistence.sql.EntityLoaderFactory;
 import persistence.sql.QueryBuilderFactory;
 import persistence.sql.config.PersistenceConfig;
@@ -24,11 +25,11 @@ public class TestEntityInitialize {
     DatabaseServer server;
     Set<EntityNode<?>> nodes;
 
-    private static void initEntityLoaderFactory(Set<EntityNode<?>> nodes, Database database) {
+    private static void initEntityLoaderFactory(Set<EntityNode<?>> nodes, Database database, ProxyFactory proxyFactory) {
         EntityLoaderFactory factory = EntityLoaderFactory.getInstance();
 
         for (EntityNode<?> node : nodes) {
-            factory.addLoader(node.entityClass(), database);
+            factory.addLoader(node.entityClass(), database, proxyFactory);
         }
     }
 
@@ -44,12 +45,13 @@ public class TestEntityInitialize {
         try {
             TestPersistenceConfig config = TestPersistenceConfig.getInstance();
             Database database = config.database();
+            ProxyFactory proxyFactory = config.proxyFactory();
             server = config.databaseServer();
             server.start();
 
             TableScanner tableScanner = config.tableScanner();
             nodes = tableScanner.scan("persistence.sql.fixture");
-            initEntityLoaderFactory(nodes, database);
+            initEntityLoaderFactory(nodes, database, proxyFactory);
 
             JoinTargetScanner joinTargetScanner = config.joinTargetScanner();
             Set<JoinTargetDefinition> joinTargets = joinTargetScanner.scan("persistence.sql.fixture");

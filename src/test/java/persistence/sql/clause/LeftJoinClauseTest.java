@@ -20,7 +20,7 @@ class LeftJoinClauseTest {
         LeftJoinClause leftJoinClause = LeftJoinClause.of(TestOrder.class, TestOrderItem.class);
 
         // then
-        assertThat(leftJoinClause.clause()).isEqualTo("LEFT JOIN order_items testorderitem ON testorder.id = testorderitem.id");
-        assertThat(leftJoinClause.columns()).isEqualTo("testorderitem.id, testorderitem.product, testorderitem.quantity");
+        assertThat(leftJoinClause.clause()).isEqualTo("LEFT JOIN order_items order_items ON orders.id = order_items.order_id");
+        assertThat(leftJoinClause.columns()).isEqualTo("order_items.id, order_items.product, order_items.quantity");
     }
 }
