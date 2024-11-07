@@ -50,8 +50,6 @@ class QueryBuilderFactoryTest {
     @DisplayName("buildQuery 함수는 매개변수 queryType에 따라 적절한 쿼리를 생성한다.")
     @MethodSource("provideQueryBuildParameters")
     void testBuildQuery(QueryType queryType, String expected, List<Clause> clauses) {
-        // given
-
         // when
         String actual = factory.buildQuery(queryType, loader, clauses.toArray(Clause[]::new));
 

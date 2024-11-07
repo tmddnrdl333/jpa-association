@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 import java.util.logging.Logger;
 
 public class EntityLoader<T> implements Loader<T> {
@@ -266,7 +267,9 @@ public class EntityLoader<T> implements Loader<T> {
         return !metadataLoader.getFieldAllByPredicate(EntityLoader::isLazy).isEmpty();
     }
 
-    public void updateLazyLoadingField(T parentEntity, PersistenceContext persistenceContext) {
+    public void updateLazyLoadingField(T parentEntity,
+                                       PersistenceContext persistenceContext,
+                                       BiConsumer<CollectionKeyHolder, CollectionEntry> onAfterLoadConsumer) {
         List<Field> lazyFields = metadataLoader.getFieldAllByPredicate(EntityLoader::isLazy);
         Object foreignKey = Clause.extractValue(metadataLoader.getPrimaryKeyField(), parentEntity);
 
@@ -280,10 +283,6 @@ public class EntityLoader<T> implements Loader<T> {
                     lazyFieldGenericType,
                     lazyFieldType,
                     persistenceContext);
-            CollectionEntry collectionEntry = CollectionEntry.create(lazyLoader, Status.MANAGED, lazyProxy);
-
-            CollectionKeyHolder collectionKeyHolder = new CollectionKeyHolder(parentEntity.getClass(), foreignKey, lazyFieldGenericType);
-            persistenceContext.addCollectionEntry(collectionKeyHolder, collectionEntry);
 
             try {
                 lazyField.setAccessible(true);
@@ -292,6 +291,11 @@ public class EntityLoader<T> implements Loader<T> {
                 logger.severe("Failed to update lazy loading field");
                 throw new IllegalStateException(e);
             }
+
+            CollectionEntry collectionEntry = CollectionEntry.create(lazyLoader, Status.MANAGED, lazyProxy);
+            CollectionKeyHolder collectionKeyHolder = new CollectionKeyHolder(parentEntity.getClass(), foreignKey, lazyFieldGenericType);
+
+            onAfterLoadConsumer.accept(collectionKeyHolder, collectionEntry);
         }
     }
 }

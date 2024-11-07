@@ -1,6 +1,7 @@
 package persistence.sql.dml.impl;
 
 import jakarta.persistence.EntityExistsException;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -216,8 +217,67 @@ class DefaultEntityManagerTest extends TestEntityInitialize {
     }
 
     @Test
-    @DisplayName("find 함수는 연관관계 엔티티가 있고, 지연로딩 객체가 있는 경우 프록시 객체로 값을 설정해 반환한다.")
+    @DisplayName("find 조회시 지연로딩 프록시 객체는 트랜잭셔널 상태일 경우 지연로딩을 제공한다.")
     void testFindWithLazyLoading() {
+        // given
+        LazyTestOrder testOrder = new LazyTestOrder("order1");
+        LazyTestOrderItem apple = new LazyTestOrderItem("apple", 10);
+        LazyTestOrderItem grape = new LazyTestOrderItem("grape", 20);
+        testOrder.addOrderItem(apple);
+        testOrder.addOrderItem(grape);
+
+        entityManager.persist(testOrder);
+        TestReflectionUtils.setFieldValue(persistenceContext, "context", new HashMap<>());
+        TestReflectionUtils.setFieldValue(persistenceContext, "collectionContext", new HashMap<>());
+
+        entityManager.getTransaction().begin();
+        // when
+        LazyTestOrder lazyTestOrder = entityManager.find(LazyTestOrder.class, testOrder.getId());
+        List<LazyTestOrderItem> actual = lazyTestOrder.getOrderItems();
+
+        // then
+        assertAll(
+                () -> assertThat(actual).isInstanceOf(Proxy.class),
+                () -> assertThat(actual).isNotNull(),
+                () -> assertThat(actual.size()).isEqualTo(0)
+        );
+
+        entityManager.getTransaction().commit();
+    }
+
+    @Test
+    @DisplayName("find 조회시 지연로딩 프록시 객체는 지연로딩 이후 실제 값을 반환한다.")
+    void testFindWithLazyLoadingWithRealize() {
+        // given
+        LazyTestOrder testOrder = new LazyTestOrder("order1");
+        LazyTestOrderItem apple = new LazyTestOrderItem("apple", 10);
+        LazyTestOrderItem grape = new LazyTestOrderItem("grape", 20);
+        testOrder.addOrderItem(apple);
+        testOrder.addOrderItem(grape);
+
+        entityManager.persist(testOrder);
+        TestReflectionUtils.setFieldValue(persistenceContext, "context", new HashMap<>());
+        TestReflectionUtils.setFieldValue(persistenceContext, "collectionContext", new HashMap<>());
+
+        entityManager.getTransaction().begin();
+        // when
+        LazyTestOrder lazyTestOrder = entityManager.find(LazyTestOrder.class, testOrder.getId());
+        List<LazyTestOrderItem> actual = lazyTestOrder.getOrderItems();
+        actual.iterator();
+
+        // then
+        assertAll(
+                () -> assertThat(actual).isInstanceOf(Proxy.class),
+                () -> assertThat(actual).containsAll(List.of(apple, grape)),
+                () -> assertThat(actual.size()).isEqualTo(2)
+        );
+
+        entityManager.getTransaction().commit();
+    }
+
+    @Test
+    @DisplayName("find 조회시 지연로딩 프록시 객체는 트랜잭셔널 상태가 아닐 경우 지연로딩을 제공하지 않고 예외를 던진다.")
+    void testFindWithLazyLoadingNoTransactional() {
         // given
         LazyTestOrder testOrder = new LazyTestOrder("order1");
         LazyTestOrderItem apple = new LazyTestOrderItem("apple", 10);
@@ -233,13 +293,9 @@ class DefaultEntityManagerTest extends TestEntityInitialize {
         LazyTestOrder actual = entityManager.find(LazyTestOrder.class, testOrder.getId());
 
         // then
-        assertAll(
-                () -> assertThat(actual.getOrderItems()).isInstanceOf(Proxy.class),
-                () -> assertThat(actual).isNotNull(),
-                () -> assertThat(actual.getOrderItems().size()).isEqualTo(0),
-                () -> assertThat(actual.getOrderItems()).containsAll(List.of(apple, grape)),
-                () -> assertThat(actual.getOrderItems().size()).isEqualTo(2)
-        );
+        Assertions.assertThatThrownBy(() -> actual.getOrderItems().iterator())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("failed to lazily initialize a collection");
     }
 
 }

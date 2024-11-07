@@ -25,7 +25,7 @@ public class DefaultEntityManager implements EntityManager {
     private final PersistenceContext persistenceContext;
     private final EntityPersister entityPersister;
     private final EntityLoaderFactory entityLoaderFactory;
-    private Transaction transaction;
+    private final Transaction transaction;
 
 
     public DefaultEntityManager(PersistenceContext persistenceContext, EntityPersister entityPersister) {
@@ -213,7 +213,11 @@ public class DefaultEntityManager implements EntityManager {
         }
 
         if (entityLoader.existLazyLoading()) {
-            entityLoader.updateLazyLoadingField(loadedEntity, persistenceContext);
+            entityLoader.updateLazyLoadingField(loadedEntity, persistenceContext, (collectionKeyHolder, collectionEntry) -> {
+                if (transaction.isActive()) {
+                    persistenceContext.addCollectionEntry(collectionKeyHolder, collectionEntry);
+                }
+            });
         }
 
         return loadedEntity;

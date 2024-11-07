@@ -1,7 +1,10 @@
 package persistence.sql.context.impl;
 
 import jakarta.persistence.Id;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import persistence.annoation.DynamicUpdate;
 import persistence.sql.EntityLoaderFactory;
 import persistence.sql.QueryBuilderFactory;
@@ -18,7 +21,7 @@ import persistence.sql.loader.EntityLoader;
 
 import java.lang.reflect.Field;
 import java.sql.Connection;
-import java.util.Collection;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -86,7 +89,7 @@ public class DefaultEntityPersister implements EntityPersister {
             return extractDiffFields(entity, snapshotEntity, loader);
         }
 
-        return loader.getFieldAllByPredicate(field -> !field.isAnnotationPresent(Id.class));
+        return loader.getFieldAllByPredicate(field -> !field.isAnnotationPresent(Id.class) && !isAssociationField(field));
     }
 
     List<Field> extractDiffFields(Object entity, Object snapshotEntity, MetadataLoader<?> loader) {
@@ -104,6 +107,13 @@ public class DefaultEntityPersister implements EntityPersister {
 
             return !entityValue.equals(snapshotValue);
         });
+    }
+
+    private boolean isAssociationField(Field field) {
+        final List<Class<?>> associationAnnotations = List.of(OneToMany.class, ManyToMany.class, ManyToOne.class, OneToOne.class);
+
+        return Arrays.stream(field.getDeclaredAnnotations())
+                .anyMatch(annotation -> associationAnnotations.contains(annotation.annotationType()));
     }
 
     @Override
