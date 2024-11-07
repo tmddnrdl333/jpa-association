@@ -10,7 +10,7 @@ public class JoinEntityData {
     private final Object joinColumnValue;
     private final EntityColumn joinColumnData;
     private final String alias;
-    private Class<?> clazz;
+    private final Class<?> clazz;
 
     public JoinEntityData(Class<?> clazz, String joinColumnName, Object joinColumnValue) {
         this.clazz = clazz;

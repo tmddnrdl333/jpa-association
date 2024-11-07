@@ -25,6 +25,7 @@ public class EntityLoader {
     }
 
     //Lazy 데이터를 전체 조회한다.
+    @SuppressWarnings("unchecked")
     public <T> List<T> findByIdLazy(JoinEntityData joinEntityData) {
         return (List<T>) jdbcTemplate.query(selectByIdQueryBuilder.buildLazyQuery(joinEntityData), resultSet -> EntityMapper.mapRow(resultSet, joinEntityData.getClazz()));
     }

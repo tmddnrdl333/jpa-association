@@ -16,16 +16,14 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jdbc.JdbcTemplate;
 import org.assertj.core.groups.Tuple;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.sql.SQLException;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 
 /*
@@ -94,12 +92,14 @@ class EntityLoaderTest {
 
         Order findOrder = this.entityLoader.find(Order.class, 1L);
 
-        assertThat(findOrder)
-                .extracting("id", "orderNumber")
-                .contains(1L, "1234");
-        assertThat(findOrder.getOrderItems())
-                .extracting("id", "orderId", "product", "quantity")
-                .containsExactly(tuple(1L, 1L, "테스트상품1", 1));
+        assertAll(
+                () -> assertThat(findOrder)
+                        .extracting("id", "orderNumber")
+                        .contains(1L, "1234"),
+                () -> assertThat(findOrder.getOrderItems())
+                        .extracting("id", "orderId", "product", "quantity")
+                        .containsExactly(tuple(1L, 1L, "테스트상품1", 1))
+        );
     }
 
     @DisplayName("Persist로 Order와 OrderItem을 저장 후 Lazy상태의 OrderItems를 조회한다.")
@@ -125,12 +125,14 @@ class EntityLoaderTest {
 
         OrderLazy findOrder = this.entityLoader.find(OrderLazy.class, 1L);
 
-        assertThat(findOrder)
-                .extracting("id", "orderNumber")
-                .contains(1L, "1234");
-        assertThat(findOrder.getOrderItems())
-                .extracting("id", "orderId", "product", "quantity")
-                .containsExactly(tuple(1L, 1L, "테스트상품1", 1));
+        assertAll(
+                () -> assertThat(findOrder)
+                        .extracting("id", "orderNumber")
+                        .contains(1L, "1234"),
+                () -> assertThat(findOrder.getOrderItems())
+                        .extracting("id", "orderId", "product", "quantity")
+                        .containsExactly(tuple(1L, 1L, "테스트상품1", 1))
+        );
     }
 
     private Person createPerson(int i) {

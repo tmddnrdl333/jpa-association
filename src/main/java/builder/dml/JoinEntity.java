@@ -8,6 +8,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class JoinEntity {
@@ -46,55 +47,63 @@ public class JoinEntity {
                 .orElse(null);
     }
 
-    private void changeFetchType(FetchType fetchType) {
-        this.fetchType = fetchType;
+    private void changeFetchType(Field field) {
+        OneToMany oneToMany = field.getAnnotation(OneToMany.class);
+        this.fetchType = oneToMany.fetch();
     }
 
     private <T> void getInstanceColumnData(T entityInstance, Object joinColumnValue) {
-        for (Field field : entityInstance.getClass().getDeclaredFields()) {
-            createDMLInstanceColumnData(field, entityInstance, joinColumnValue);
-        }
+        Arrays.stream(entityInstance.getClass().getDeclaredFields())
+                .filter(field -> field.isAnnotationPresent(OneToMany.class))
+                .forEach(field -> createDMLInstanceColumnData(field, entityInstance, joinColumnValue));
     }
 
     private void getEntityColumnData(Class<?> entityClass, Object joinColumnName) {
-        for (Field field : entityClass.getDeclaredFields()) {
-            createDMLEntityColumnData(field, joinColumnName);
-        }
+        Arrays.stream(entityClass.getDeclaredFields())
+                .filter(field -> field.isAnnotationPresent(OneToMany.class))
+                .forEach(field -> createDMLEntityColumnData(field, joinColumnName));
     }
 
     private <T> void createDMLInstanceColumnData(Field field, T entityInstance, Object joinColumnValue) {
-        if (field.isAnnotationPresent(OneToMany.class)) {
-            OneToMany oneToMany = field.getAnnotation(OneToMany.class);
-            changeFetchType(oneToMany.fetch());
-
-
-            JoinColumn joinColumn = field.getAnnotation(JoinColumn.class);
-            field.setAccessible(true);
-            List<?> relatedEntities;
-            try {
-                relatedEntities = (List<?>) field.get(entityInstance); // 부모 객체에서 List를 가져옴
-            } catch (IllegalAccessException e) {
-                throw new RuntimeException(GET_FIELD_VALUE_ERROR_MESSAGE + field.getName(), e);
-            }
-
-            relatedEntities.forEach(object -> {
-                this.joinEntityData.add(new JoinEntityData(object, joinColumn.name(), joinColumnValue));
-                joinStatus = JoinStatus.TRUE;
-            });
-        }
+        List<?> relatedEntities = getRelatedEntities(field, entityInstance);
+        processRelatedEntities(field, relatedEntities, joinColumnValue);
     }
 
     private void createDMLEntityColumnData(Field field, Object joinColumnValue) {
-        if (field.isAnnotationPresent(OneToMany.class)) {
-            OneToMany oneToMany = field.getAnnotation(OneToMany.class);
-            changeFetchType(oneToMany.fetch());
+        changeFetchType(field);
 
-            JoinColumn joinColumn = field.getAnnotation(JoinColumn.class);
+        JoinColumn joinColumn = field.getAnnotation(JoinColumn.class);
 
-            Type type = field.getGenericType();
-            Type[] types = ((ParameterizedType) type).getActualTypeArguments();
-            this.joinEntityData.add(new JoinEntityData((Class<?>) types[0], joinColumn.name(), joinColumnValue));
-            joinStatus = JoinStatus.TRUE;
+        Class<?> relatedEntityClass = getRelatedEntityClass(field);
+        this.joinEntityData.add(new JoinEntityData(relatedEntityClass, joinColumn.name(), joinColumnValue));
+        joinStatus = JoinStatus.TRUE;
+    }
+
+    private <T> List<?> getRelatedEntities(Field field, T entityInstance) {
+        try {
+            field.setAccessible(true);
+            changeFetchType(field);
+
+            return (List<?>) field.get(entityInstance);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(GET_FIELD_VALUE_ERROR_MESSAGE + field.getName(), e);
         }
     }
+
+    private void processRelatedEntities(Field field, List<?> relatedEntities, Object joinColumnValue) {
+        JoinColumn joinColumn = field.getAnnotation(JoinColumn.class);
+        relatedEntities.forEach(object -> addJoinEntityData(object, joinColumn, joinColumnValue));
+    }
+
+    private void addJoinEntityData(Object object, JoinColumn joinColumn, Object joinColumnValue) {
+        this.joinEntityData.add(new JoinEntityData(object, joinColumn.name(), joinColumnValue));
+        joinStatus = JoinStatus.TRUE;
+    }
+
+    private Class<?> getRelatedEntityClass(Field field) {
+        Type type = field.getGenericType();
+        Type[] types = ((ParameterizedType) type).getActualTypeArguments();
+        return (Class<?>) types[0];
+    }
+
 }
