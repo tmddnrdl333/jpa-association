@@ -19,7 +19,7 @@ public class StatefulPersistenceContextTest extends PluggableH2test {
         Map<EntityKey, Object> _1차캐시 = new HashMap<>();
         Map<EntityKey, Object> DB_스냅샷 = new HashMap<>();
 
-        runInH2Db(queryRunner -> {
+        runInH2Db((queryRunner, queryBuilder) -> {
             // given
             PersistenceContext trackablePersistenceContext = new StatefulPersistenceContext(_1차캐시, DB_스냅샷);
             테이블_생성(queryRunner, Person.class);
@@ -40,7 +40,7 @@ public class StatefulPersistenceContextTest extends PluggableH2test {
         Map<EntityKey, Object> _1차캐시 = new HashMap<>();
         Map<EntityKey, Object> DB_스냅샷 = new HashMap<>();
 
-        runInH2Db(queryRunner -> {
+        runInH2Db((queryRunner, queryBuilder) -> {
             // given
             PersistenceContext trackablePersistenceContext = new StatefulPersistenceContext(_1차캐시, DB_스냅샷);
             테이블_생성(queryRunner, Person.class);
@@ -67,7 +67,7 @@ public class StatefulPersistenceContextTest extends PluggableH2test {
         Map<EntityKey, Object> _1차캐시 = new HashMap<>();
         Map<EntityKey, Object> DB_스냅샷 = new HashMap<>();
 
-        runInH2Db(queryRunner -> {
+        runInH2Db((queryRunner, queryBuilder) -> {
             // given
             테이블_생성(queryRunner, Person.class);
             EntityManager session = new SessionImpl(queryRunner, new StatefulPersistenceContext(_1차캐시, DB_스냅샷));

@@ -1,9 +1,13 @@
 package orm;
 
+import orm.assosiation.RelationField;
+import orm.assosiation.RelationFields;
 import orm.dirty_check.DirtyCheckMarker;
 import orm.dsl.QueryBuilder;
 import orm.dsl.QueryRunner;
 import orm.dsl.holder.EntityIdHolder;
+
+import java.util.List;
 
 public class DefaultEntityPersister implements EntityPersister {
 
@@ -17,8 +21,32 @@ public class DefaultEntityPersister implements EntityPersister {
 
     @Override
     public <T> T persist(T entity) {
-        return queryBuilder.insertIntoValues(entity, queryRunner)
+        var tableClassifier = new RelationFields<>(entity);
+
+        T rootEntity = queryBuilder.insertIntoValues(entity, queryRunner)
                 .returnAsEntity();
+
+        // 연관관계 필드 저장
+        List<RelationField> valuedRelationList = tableClassifier.getValuedRelationList();
+        for (RelationField relationField : valuedRelationList) {
+            persistRelations(relationField);
+        }
+        return rootEntity;
+    }
+
+    // 연관관계 필드 저장
+    private <T> void persistRelations(RelationField relationField) {
+
+        // 연관관계가 컬랙션이 아니면 진행하지 않음
+        if (!relationField.isValueTypeCollection()) {
+            return;
+        }
+
+        List<Object> entityList = relationField.getValueAsList();
+        for (Object entity : entityList) {
+            queryBuilder.insertIntoValues(entity, queryRunner)
+                    .returnAsEntity();
+        }
     }
 
     @Override

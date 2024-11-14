@@ -16,8 +16,16 @@ public class DefaultEntityLoader implements EntityLoader {
 
     @Override
     public <T> T find(Class<T> clazz, Object id) {
-        return queryBuilder.selectFrom(clazz, queryRunner)
-                .findById(id)
+        var tableEntity = new TableEntity<>(clazz);
+        if (tableEntity.hasRelationFields()) {
+            return queryBuilder.selectFrom(tableEntity, queryRunner)
+                    .joinAll()
+                    .whereWithId(id)
+                    .fetchOne();
+        }
+
+        return queryBuilder.selectFrom(tableEntity, queryRunner)
+                .joinAll()
                 .fetchOne();
     }
 

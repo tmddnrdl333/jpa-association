@@ -4,7 +4,6 @@ import config.PluggableH2test;
 import jdbc.RowMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import orm.dsl.QueryBuilder;
 import persistence.sql.ddl.Person;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -18,17 +17,16 @@ class RowMapperTest extends PluggableH2test {
             내부적으로 TableEntity를 사용하여 컬럼값을 매칭해서 가져온다.
             """)
     void rowMapper_테스트() {
-        runInH2Db(queryRunner -> {
+        runInH2Db((queryRunner, queryBuilder) -> {
             // given
             final Long personId = 1L;
-            QueryBuilder queryBuilder = new QueryBuilder();
 
             테이블_생성(queryRunner, Person.class);
             Person newPerson = new Person(personId, 30, "설동민");
             queryBuilder.insertIntoValues(newPerson, queryRunner).execute();
 
             // when
-            RowMapper<Person> rowMapper = new DefaultRowMapper<>(newPerson);
+            RowMapper<Person> rowMapper = new SimpleRowMapper<>(newPerson);
             Person person = queryBuilder.selectFrom(Person.class, queryRunner)
                     .fetchOne(rowMapper);
 

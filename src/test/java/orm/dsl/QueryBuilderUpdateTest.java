@@ -83,10 +83,8 @@ class QueryBuilderUpdateTest extends PluggableH2test {
     @Test
     @DisplayName("DELETE 절 조건 실제 실행 테스트")
     void DML_DELETE_문_실행_테스트() {
-        runInH2Db((queryRunner) -> {
+        runInH2Db((queryRunner, queryBuilder) -> {
             // given
-            QueryBuilder queryBuilder = new QueryBuilder();
-
             테이블_생성(queryRunner, Person.class);
             Person_엔티티_생성(queryRunner, new Person(1L, 30, "설동민"));
             Person_엔티티_생성(queryRunner, new Person(2L, 30, "설동민2"));
@@ -98,7 +96,7 @@ class QueryBuilderUpdateTest extends PluggableH2test {
 
             List<Person> people = queryBuilder.selectFrom(Person.class, queryRunner)
                     .findAll()
-                    .fetch(new PersonRowMapper());
+                    .fetch();
 
             // then
             assertThat(people).asList().hasSize(0);

@@ -7,4 +7,6 @@ public interface WhereForFetchStep<E> extends ConditionForFetchStep<E> {
     ConditionForFetchStep<E> where(Condition condition);
 
     ConditionForFetchStep<E> where(Condition... conditions);
+
+    ConditionForFetchStep<E> whereWithId(Object id);
 }

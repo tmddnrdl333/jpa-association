@@ -1,0 +1,32 @@
+@startuml
+interface RowMapper<T> {
+    +mapRow(resultSet: ResultSet): T
+}
+
+class SimpleRowMapper implements RowMapper<T> {
+    +mapRow(resultSet: ResultSet): T
+}
+
+class EntityGraphAwareRowMapper implements RowMapper<T> {
+    +mapRow(resultSet: ResultSet): T
+}
+@enduml
+
+@startuml
+abstract class SelectRenderer<E> {
+    - TableEntity<E> tableEntity
+    - Conditions conditions
+    - RelationFields relationFields
+    + SelectRenderer(TableEntity<E> tableEntity, Conditions conditions, RelationFields relationFields)
+    + String renderSql()
+}
+
+class SimpleSelectRenderer<E> extends SelectRenderer<E> {
+    + String renderSql()
+}
+
+class WithJoinQueryRenderer<E> extends SelectRenderer<E> {
+    + String renderSql()
+}
+
+@enduml

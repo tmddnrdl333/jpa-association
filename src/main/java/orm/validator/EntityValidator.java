@@ -17,7 +17,7 @@ public class EntityValidator<E> {
 
     public void validate() {
         throwIfNotEntity();
-        throwIfTransientColumnFound();
+//        throwIfTransientColumnFound();
     }
 
     private void throwIfNotEntity() {

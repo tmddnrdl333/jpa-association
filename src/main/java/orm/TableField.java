@@ -1,9 +1,9 @@
 package orm;
 
-import jakarta.persistence.Column;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import orm.exception.CannotExtractEntityFieldValueException;
+import orm.meta.EntityFieldMeta;
 import orm.settings.JpaSettings;
 
 import java.lang.reflect.Field;
@@ -13,37 +13,25 @@ public class TableField {
     private static final Logger log = LoggerFactory.getLogger(TableField.class);
     private final Field field;
 
-    // @Column을 고려한 실제 필드명
-    private final String fieldName;
-
-    // @Column을 고려하지 않은 엔티티 필드들의 자바 필드명
-    private final String classFieldName;
-
-    private final ColumnMeta columnMeta;
-
-    private final JpaSettings jpaSettings;
+    private final EntityFieldMeta entityFieldMeta;
     private Object fieldValue;
 
     public <T> TableField(Field field, T entity, JpaSettings jpaSettings) {
-        Column column = field.getAnnotation(Column.class);
-        this.jpaSettings = jpaSettings;
         this.field = field;
-        this.fieldName = extractFieldName(column, field);
-        this.classFieldName = field.getName();
+        this.entityFieldMeta = new EntityFieldMeta(field, jpaSettings);
         this.fieldValue = extractFieldValue(field, entity);
-        this.columnMeta = ColumnMeta.from(column);
     }
 
     public String getFieldName() {
-        return fieldName;
+        return entityFieldMeta.getFieldName();
     }
 
     public String getClassFieldName() {
-        return classFieldName;
+        return entityFieldMeta.getClassFieldName();
     }
 
     public ColumnMeta getColumnMeta() {
-        return columnMeta;
+        return entityFieldMeta.getColumnMeta();
     }
 
     public Class<?> getFieldType() {
@@ -60,10 +48,6 @@ public class TableField {
 
     public boolean isId() {
         return false;
-    }
-
-    private String extractFieldName(Column column, Field field) {
-        return jpaSettings.getNamingStrategy().namingColumn(column, field);
     }
 
     private <T> Object extractFieldValue(Field field, T entity) {

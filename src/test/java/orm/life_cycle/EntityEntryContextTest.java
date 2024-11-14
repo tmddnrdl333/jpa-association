@@ -23,7 +23,7 @@ public class EntityEntryContextTest extends PluggableH2test {
     void entityEntry_persist_테스트() {
         TrackableEntityEntryContext entityEntryContext = new TrackableEntityEntryContext();
 
-        runInH2Db(queryRunner -> {
+        runInH2Db((queryRunner, queryBuilder) -> {
             // given
             테이블_생성(queryRunner, Person.class);
             EntityManager session = new SessionImpl(queryRunner, new StatefulPersistenceContext(entityEntryContext));
@@ -45,7 +45,7 @@ public class EntityEntryContextTest extends PluggableH2test {
     void entityEntry_persist_ai_테스트() {
         TrackableEntityEntryContext entityEntryContext = new TrackableEntityEntryContext();
 
-        runInH2Db(queryRunner -> {
+        runInH2Db((queryRunner, queryBuilder) -> {
             // given
             테이블_생성(queryRunner, PersonWithAI.class);
             EntityManager session = new SessionImpl(queryRunner, new StatefulPersistenceContext(entityEntryContext));
@@ -67,7 +67,7 @@ public class EntityEntryContextTest extends PluggableH2test {
     void entityEntry_find_테스트() {
         TrackableEntityEntryContext entityEntryContext = new TrackableEntityEntryContext();
 
-        runInH2Db(queryRunner -> {
+        runInH2Db((queryRunner, queryBuilder) -> {
             // given
             테이블_생성(queryRunner, Person.class);
             엔티티매니저_없이_insert(new Person(1L, 30, "설동민"), queryRunner);
@@ -90,7 +90,7 @@ public class EntityEntryContextTest extends PluggableH2test {
     void entityEntry_insert_후_find_테스트() {
         TrackableEntityEntryContext entityEntryContext = new TrackableEntityEntryContext();
 
-        runInH2Db(queryRunner -> {
+        runInH2Db((queryRunner, queryBuilder) -> {
             // given
             테이블_생성(queryRunner, Person.class);
 
@@ -113,7 +113,7 @@ public class EntityEntryContextTest extends PluggableH2test {
     void entityEntry_insert_후_delete_테스트() {
         TrackableEntityEntryContext entityEntryContext = new TrackableEntityEntryContext();
 
-        runInH2Db(queryRunner -> {
+        runInH2Db((queryRunner, queryBuilder) -> {
             // given
             테이블_생성(queryRunner, Person.class);
 
@@ -137,7 +137,7 @@ public class EntityEntryContextTest extends PluggableH2test {
     void entityEntry_find_detach_find_테스트() {
         TrackableEntityEntryContext entityEntryContext = new TrackableEntityEntryContext();
 
-        runInH2Db(queryRunner -> {
+        runInH2Db((queryRunner, queryBuilder) -> {
             // given
             테이블_생성(queryRunner, Person.class);
 
