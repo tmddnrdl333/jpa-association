@@ -1,4 +1,4 @@
-package persistence.sql.query;
+package persistence.sql.dml.query.utils;
 
 import java.util.List;
 import java.util.stream.Collectors;

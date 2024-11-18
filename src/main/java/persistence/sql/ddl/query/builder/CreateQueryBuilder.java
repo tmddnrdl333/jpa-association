@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import persistence.sql.ddl.query.ColumnMeta;
 import persistence.sql.dialect.Dialect;
-import persistence.sql.metadata.Identifier;
+import persistence.sql.ddl.query.constraint.PrimaryKeyConstraint;
 import persistence.sql.metadata.TableName;
 
 public class CreateQueryBuilder {
@@ -31,19 +31,19 @@ public class CreateQueryBuilder {
         return queryString.toString();
     }
 
-    public CreateQueryBuilder create(TableName tableName, Identifier identifier, List<ColumnMeta> columns) {
+    public CreateQueryBuilder create(TableName tableName, PrimaryKeyConstraint primaryKeyConstraint, List<ColumnMeta> columns) {
         queryString.append( CREATE_TABLE )
                 .append( " " )
                 .append( tableName.value() )
                 .append( " (" );
 
-        queryString.append( definePrimaryKeyColumn(identifier, dialect) ).append(", ");
+        queryString.append( definePrimaryKeyColumn(primaryKeyConstraint, dialect) ).append(", ");
         queryString.append(
                 columns.stream()
                 .map(column -> define(column, dialect))
                 .collect(Collectors.joining(", "))
         );
-        queryString.append( definePrimaryKeyConstraint(identifier) );
+        queryString.append( definePrimaryKeyConstraint(primaryKeyConstraint) );
 
         queryString.append(")");
         return this;

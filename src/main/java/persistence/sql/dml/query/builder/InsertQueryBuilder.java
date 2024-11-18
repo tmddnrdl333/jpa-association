@@ -5,7 +5,7 @@ import java.util.stream.Collectors;
 import persistence.sql.dml.query.ColumnNameValue;
 import persistence.sql.metadata.ColumnName;
 import persistence.sql.metadata.TableName;
-import persistence.sql.query.QueryClauseGenerator;
+import persistence.sql.dml.query.utils.QueryClauseGenerator;
 
 public class InsertQueryBuilder {
 

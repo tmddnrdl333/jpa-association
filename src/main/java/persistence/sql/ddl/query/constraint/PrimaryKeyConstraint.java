@@ -1,4 +1,4 @@
-package persistence.sql.metadata;
+package persistence.sql.ddl.query.constraint;
 
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -8,15 +8,19 @@ import java.util.Arrays;
 import persistence.exception.NotExistException;
 import persistence.sql.ddl.query.ColumnMeta;
 
-public record Identifier(ColumnMeta column,
-                         GenerationType generationType) {
+public record PrimaryKeyConstraint(ColumnMeta column,
+                                   GenerationType generationType) {
 
-    public static Identifier from(Field[] fields) {
-        Field identifierField = Arrays.stream(fields)
+    public static PrimaryKeyConstraint from(Class<?> clazz) {
+        Field idField = idField(clazz);
+        return new PrimaryKeyConstraint(new ColumnMeta(idField, clazz), generationType(idField));
+    }
+
+    private static Field idField(Class<?> clazz) {
+        return Arrays.stream(clazz.getDeclaredFields())
                 .filter(field -> field.isAnnotationPresent(Id.class))
                 .findFirst()
                 .orElseThrow(() -> new NotExistException("identification."));
-        return new Identifier(new ColumnMeta(identifierField), generationType(identifierField));
     }
 
     private static GenerationType generationType(Field field) {

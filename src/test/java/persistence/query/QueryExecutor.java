@@ -14,7 +14,7 @@ public class QueryExecutor {
     public static void create(Class<?> clazz, JdbcTemplate jdbcTemplate) {
         CreateQuery query = new CreateQuery(clazz);
         CreateQueryBuilder queryBuilder = CreateQueryBuilder.builder(new H2Dialect())
-                .create(query.tableName(), query.identifier(), query.columns());
+                .create(query.tableName(), query.primaryKeyConstraint(), query.columns());
 
         jdbcTemplate.execute(queryBuilder.build());
     }

@@ -6,10 +6,14 @@ import static persistence.validator.AnnotationValidator.isPresent;
 import jakarta.persistence.Column;
 import java.lang.reflect.Field;
 
-public record ColumnName(String value) {
+public record ColumnName(String value, TableAlias alias) {
 
-    public ColumnName(Field field) {
-        this(getName(field));
+    public ColumnName(Field field, TableName tableName) {
+        this(getName(field), new TableAlias(tableName));
+    }
+
+    public ColumnName(Field field, Class<?> clazz) {
+        this(getName(field), new TableAlias(clazz));
     }
 
     private static String getName(Field field) {

@@ -6,12 +6,12 @@ import static persistence.validator.AnnotationValidator.notPredicate;
 import jakarta.persistence.Transient;
 import java.util.Arrays;
 import java.util.List;
-import persistence.sql.metadata.Identifier;
+import persistence.sql.ddl.query.constraint.PrimaryKeyConstraint;
 import persistence.sql.metadata.TableName;
 
 public record CreateQuery(TableName tableName,
                           List<ColumnMeta> columns,
-                          Identifier identifier) {
+                          PrimaryKeyConstraint primaryKeyConstraint) {
 
     public CreateQuery(Class<?> clazz) {
         this(
@@ -19,9 +19,9 @@ public record CreateQuery(TableName tableName,
                 Arrays.stream(clazz.getDeclaredFields())
                         .filter(notIdentifier())
                         .filter(notPredicate(Transient.class))
-                        .map(ColumnMeta::new)
+                        .map(field -> new ColumnMeta(field, clazz))
                         .toList(),
-                Identifier.from(clazz.getDeclaredFields())
+                PrimaryKeyConstraint.from(clazz)
         );
     }
 

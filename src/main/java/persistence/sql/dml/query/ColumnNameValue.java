@@ -8,10 +8,10 @@ public record ColumnNameValue(ColumnName columnName,
                               Object columnValue,
                               Class<?> type) {
 
-    public ColumnNameValue(Object object, Field field) {
+    public ColumnNameValue(Object clazzObject, Field field) {
         this(
-                new ColumnName(field),
-                getColumnValue(object, field),
+                new ColumnName(field, clazzObject.getClass()),
+                getColumnValue(clazzObject, field),
                 field.getType()
         );
     }

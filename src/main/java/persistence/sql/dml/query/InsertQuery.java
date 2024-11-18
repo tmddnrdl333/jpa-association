@@ -11,13 +11,13 @@ import persistence.sql.metadata.TableName;
 
 public record InsertQuery(TableName tableName,
                           List<ColumnNameValue> columns) {
-    public InsertQuery(Object object) {
+    public InsertQuery(Object clazzObject) {
         this(
-                new TableName(object.getClass()),
-                Arrays.stream(object.getClass().getDeclaredFields())
+                new TableName(clazzObject.getClass()),
+                Arrays.stream(clazzObject.getClass().getDeclaredFields())
                         .filter(field -> isNotPresent(field, Transient.class))
                         .filter(field -> isNotPresent(field, Id.class))
-                        .map(field -> new ColumnNameValue(object, field))
+                        .map(field -> new ColumnNameValue(clazzObject, field))
                         .toList()
         );
     }

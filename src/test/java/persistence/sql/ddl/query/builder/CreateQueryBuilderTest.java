@@ -17,7 +17,7 @@ public class CreateQueryBuilderTest {
     void createQueryWithEntityId() {
         CreateQuery query = new CreateQuery(PersonWithEntityIdFixture.class);
         CreateQueryBuilder queryBuilder = CreateQueryBuilder.builder(new H2Dialect())
-                .create(query.tableName(), query.identifier(), query.columns());
+                .create(query.tableName(), query.primaryKeyConstraint(), query.columns());
         String expectedQuery = """
                 create table PersonWithEntityIdFixture (id bigint auto_increment, name varchar(255), age integer, primary key (id))""";
         assertEquals(queryBuilder.build(), expectedQuery);
@@ -28,7 +28,7 @@ public class CreateQueryBuilderTest {
     void createQueryWithGeneratedValueColumn() {
         CreateQuery query = new CreateQuery(PersonWithGeneratedValueColumnFixture.class);
         CreateQueryBuilder queryBuilder = CreateQueryBuilder.builder(new H2Dialect())
-                .create(query.tableName(), query.identifier(), query.columns());
+                .create(query.tableName(), query.primaryKeyConstraint(), query.columns());
         String expectedQuery = """
                 create table PersonWithGeneratedValueColumnFixture (id bigint auto_increment, nick_name varchar(255), old integer, email varchar(255) not null, primary key (id))""";
         assertEquals(queryBuilder.build(), expectedQuery);
@@ -39,7 +39,7 @@ public class CreateQueryBuilderTest {
     void createQueryWithTableTransient() {
         CreateQuery query = new CreateQuery(PersonWithTableTransientFixture.class);
         CreateQueryBuilder queryBuilder = CreateQueryBuilder.builder(new H2Dialect())
-                .create(query.tableName(), query.identifier(), query.columns());
+                .create(query.tableName(), query.primaryKeyConstraint(), query.columns());
         String expectedQuery = """
                 create table users (id bigint auto_increment, nick_name varchar(255), old integer, email varchar(255) not null, primary key (id))""";
 

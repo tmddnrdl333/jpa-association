@@ -1,6 +1,6 @@
 package persistence.sql.dml.query.builder;
 
-import static persistence.sql.query.QueryClauseGenerator.whereClause;
+import static persistence.sql.dml.query.utils.QueryClauseGenerator.whereClause;
 
 import java.util.List;
 import java.util.stream.Collectors;

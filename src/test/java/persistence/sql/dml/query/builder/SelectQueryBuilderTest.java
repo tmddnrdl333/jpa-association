@@ -19,7 +19,7 @@ public class SelectQueryBuilderTest {
                 .select(query.columnNames())
                 .from(query.tableName());
         String expectedQuery = """
-                select id, nick_name, old, email from users""";
+                select users.id, users.nick_name, users.old, users.email from users""";
         assertEquals(queryBuilder.build(), expectedQuery);
     }
 
@@ -33,7 +33,7 @@ public class SelectQueryBuilderTest {
                 .where(List.of(new WhereCondition("id", "=", 1L)));
 
         String expectedQuery = """
-                select id, nick_name, old, email from users where id = 1""";
+                select users.id, users.nick_name, users.old, users.email from users where id = 1""";
         assertEquals(queryBuilder.build(), expectedQuery);
     }
 

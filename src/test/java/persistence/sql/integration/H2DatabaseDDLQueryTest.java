@@ -40,7 +40,7 @@ public class H2DatabaseDDLQueryTest {
 
         CreateQuery query = new CreateQuery(Person.class);
         CreateQueryBuilder queryBuilder = CreateQueryBuilder.builder(new H2Dialect())
-                .create(query.tableName(), query.identifier(), query.columns());
+                .create(query.tableName(), query.primaryKeyConstraint(), query.columns());
 
         jdbcTemplate.execute(queryBuilder.build());
 
@@ -58,7 +58,7 @@ public class H2DatabaseDDLQueryTest {
 
         CreateQuery createQuery = new CreateQuery(Person.class);
         CreateQueryBuilder queryBuilder = CreateQueryBuilder.builder(new H2Dialect())
-                .create(createQuery.tableName(), createQuery.identifier(), createQuery.columns());
+                .create(createQuery.tableName(), createQuery.primaryKeyConstraint(), createQuery.columns());
 
         jdbcTemplate.execute(queryBuilder.build());
         Integer tableCountAfterCreate = jdbcTemplate.queryForObject(
