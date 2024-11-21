@@ -1,7 +1,7 @@
 package persistence.sql.ddl.query.builder;
 
+import persistence.meta.TableMeta;
 import persistence.sql.dialect.Dialect;
-import persistence.sql.metadata.TableName;
 
 public class DropQueryBuilder {
 
@@ -23,10 +23,12 @@ public class DropQueryBuilder {
         return queryString.toString();
     }
 
-    public DropQueryBuilder drop(TableName tableName) {
+    public DropQueryBuilder drop(Class<?> clazz) {
+        TableMeta tableMeta = new TableMeta(clazz);
+
         queryString.append( DROP_TABLE )
                 .append( " " )
-                .append( tableName.value() );
+                .append( tableMeta.name() );
         return this;
     }
 

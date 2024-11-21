@@ -3,8 +3,7 @@ package sample.repository;
 import java.sql.Connection;
 import java.util.List;
 import jdbc.JdbcTemplate;
-import persistence.sql.dml.query.SelectQuery;
-import persistence.sql.dml.query.WhereCondition;
+import persistence.meta.SchemaMeta;
 import persistence.sql.dml.query.builder.SelectQueryBuilder;
 import sample.domain.Person;
 
@@ -18,13 +17,13 @@ public class PersonRepository implements Repository<Person, Long> {
 
     @Override
     public List<Person> findAll() {
-        SelectQuery query = new SelectQuery(Person.class);
-        SelectQueryBuilder queryBuilder = SelectQueryBuilder.builder()
-                .select(query.columnNames())
-                .from(query.tableName());
-        String queryString = queryBuilder.build();
+        SchemaMeta schemaMeta = new SchemaMeta(Person.class);
+        String query = SelectQueryBuilder.builder()
+                .select()
+                .from(schemaMeta.tableName())
+                .build();
 
-        return jdbcTemplate.query(queryString, (resultSet -> new Person(
+        return jdbcTemplate.query(query, (resultSet -> new Person(
                 resultSet.getLong("id"),
                 resultSet.getString("nick_name"),
                 resultSet.getInt("old"),
@@ -34,14 +33,13 @@ public class PersonRepository implements Repository<Person, Long> {
 
     @Override
     public Person findById(Long id) {
-        SelectQuery query = new SelectQuery(Person.class);
-        SelectQueryBuilder queryBuilder = SelectQueryBuilder.builder()
-                .select(query.columnNames())
-                .from(query.tableName())
-                .where(List.of(new WhereCondition("id", "=", id)));
-        String queryString = queryBuilder.build();
+        SchemaMeta schemaMeta = new SchemaMeta(Person.class);
+        String query = SelectQueryBuilder.builder()
+                .select()
+                .from(schemaMeta.tableName())
+                .build();
 
-        return jdbcTemplate.queryForObject(queryString, (resultSet -> new Person(
+        return jdbcTemplate.queryForObject(query, (resultSet -> new Person(
                 resultSet.getLong("id"),
                 resultSet.getString("nick_name"),
                 resultSet.getInt("old"),

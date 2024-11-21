@@ -1,15 +1,19 @@
 package persistence.sql.ddl.query.builder;
 
-import static persistence.sql.ddl.query.builder.ColumnDefinition.define;
-import static persistence.sql.ddl.query.builder.TableDefinition.definePrimaryKeyColumn;
-import static persistence.sql.ddl.query.builder.TableDefinition.definePrimaryKeyConstraint;
+import static persistence.sql.ddl.query.ColumnDefinition.define;
+import static persistence.sql.ddl.query.TableDefinition.definePrimaryKeyColumn;
+import static persistence.sql.ddl.query.TableDefinition.definePrimaryKeyConstraint;
+import static persistence.validator.AnnotationValidator.isNotPresent;
 
+import jakarta.persistence.Id;
+import jakarta.persistence.Transient;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import persistence.sql.ddl.query.ColumnMeta;
+import persistence.meta.ColumnMeta;
+import persistence.meta.TableMeta;
+import persistence.meta.PrimaryKeyConstraint;
 import persistence.sql.dialect.Dialect;
-import persistence.sql.ddl.query.constraint.PrimaryKeyConstraint;
-import persistence.sql.metadata.TableName;
 
 public class CreateQueryBuilder {
 
@@ -31,24 +35,30 @@ public class CreateQueryBuilder {
         return queryString.toString();
     }
 
-    public CreateQueryBuilder create(TableName tableName, PrimaryKeyConstraint primaryKeyConstraint, List<ColumnMeta> columns) {
+    public CreateQueryBuilder create(Class<?> clazz) {
+        TableMeta tableMeta = new TableMeta(clazz);
+        List<ColumnMeta> columnMetas = Arrays.stream(clazz.getDeclaredFields())
+                .filter(field -> isNotPresent(field, Id.class))
+                .filter(field -> isNotPresent(field, Transient.class))
+                .map(ColumnMeta::new)
+                .toList();
+        PrimaryKeyConstraint primaryKeyConstraint = PrimaryKeyConstraint.from(clazz);
+
         queryString.append( CREATE_TABLE )
                 .append( " " )
-                .append( tableName.value() )
+                .append( tableMeta.name() )
                 .append( " (" );
 
         queryString.append( definePrimaryKeyColumn(primaryKeyConstraint, dialect) ).append(", ");
         queryString.append(
-                columns.stream()
-                .map(column -> define(column, dialect))
-                .collect(Collectors.joining(", "))
+                columnMetas.stream()
+                        .map(column -> define(column, dialect))
+                        .collect(Collectors.joining(", "))
         );
         queryString.append( definePrimaryKeyConstraint(primaryKeyConstraint) );
 
         queryString.append(")");
         return this;
     }
-
-
 
 }

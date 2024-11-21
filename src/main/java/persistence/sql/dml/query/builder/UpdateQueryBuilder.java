@@ -1,12 +1,11 @@
 package persistence.sql.dml.query.builder;
 
-import static persistence.sql.dml.query.utils.QueryClauseGenerator.whereClause;
+import static persistence.sql.dml.query.WhereClauseGenerator.whereClause;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
-import persistence.sql.dml.query.ColumnNameValue;
+import persistence.sql.ddl.type.ColumnType;
 import persistence.sql.dml.query.WhereCondition;
-import persistence.sql.metadata.TableName;
 
 public class UpdateQueryBuilder {
 
@@ -27,18 +26,18 @@ public class UpdateQueryBuilder {
         return queryString.toString();
     }
 
-    public UpdateQueryBuilder update(TableName tableName) {
+    public UpdateQueryBuilder update(String tableName) {
         queryString.append( UPDATE )
                 .append( " " )
-                .append( tableName.value() );
+                .append( tableName );
         return this;
     }
 
-    public UpdateQueryBuilder set(List<ColumnNameValue> columns) {
+    public UpdateQueryBuilder set(List<String> columnNames, List<Object> columnValues) {
         queryString.append( " " )
                 .append( SET )
                 .append( " " )
-                .append( setClause(columns) );
+                .append( setClause(columnNames, columnValues) );
         return this;
     }
 
@@ -47,10 +46,23 @@ public class UpdateQueryBuilder {
         return this;
     }
 
-    private String setClause(List<ColumnNameValue> columns) {
-        return columns.stream()
-                .map(column -> column.columnName().value() + " = " + column.columnValueString())
-                .collect(Collectors.joining(", "));
+    private String setClause(List<String> columnNames, List<Object> columnValues) {
+        List<String> nameValues = new ArrayList<>();
+        for (int idx = 0; idx < columnNames.size(); idx++) {
+            nameValues.add( columnNames.get(idx) + " = " + format(columnValues.get(idx)) );
+        }
+        return String.join(", ", nameValues);
+    }
+
+    public String format(Object value) {
+        if (value == null) {
+            return null;
+        }
+
+        if (ColumnType.isVarcharType(value.getClass())) {
+            return "'" + value + "'";
+        }
+        return value.toString();
     }
 
 }

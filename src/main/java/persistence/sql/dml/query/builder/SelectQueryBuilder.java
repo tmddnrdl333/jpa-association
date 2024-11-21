@@ -1,13 +1,10 @@
 package persistence.sql.dml.query.builder;
 
-import static persistence.sql.dml.query.utils.QueryClauseGenerator.columnClause;
-import static persistence.sql.dml.query.utils.QueryClauseGenerator.whereClause;
+import static persistence.sql.dml.query.WhereClauseGenerator.whereClause;
 
 import java.util.List;
 import java.util.stream.Collectors;
 import persistence.sql.dml.query.WhereCondition;
-import persistence.sql.metadata.ColumnName;
-import persistence.sql.metadata.TableName;
 
 public class SelectQueryBuilder {
 
@@ -29,10 +26,10 @@ public class SelectQueryBuilder {
         return queryString.toString();
     }
 
-    public SelectQueryBuilder select(List<ColumnName> columnNames) {
+    public SelectQueryBuilder select(List<String> columnNames, String alias) {
         queryString.append( SELECT )
                 .append( " " )
-                .append( columnClauseWithAlias(columnNames) );
+                .append( columnClauseWithAlias(columnNames, alias) );
         return this;
     }
 
@@ -43,17 +40,17 @@ public class SelectQueryBuilder {
         return this;
     }
 
-    private static String columnClauseWithAlias(List<ColumnName> columnNames) {
+    private static String columnClauseWithAlias(List<String> columnNames, String alias) {
         return columnNames.stream()
-                .map(columnName -> columnName.alias().value() + "." + columnName.value())
+                .map(columnName -> alias + "." + columnName)
                 .collect(Collectors.joining(", "));
     }
 
-    public SelectQueryBuilder from(TableName tableName) {
+    public SelectQueryBuilder from(String tableName) {
         queryString.append( " " )
                 .append( FROM )
                 .append( " " )
-                .append( tableName.value() );
+                .append( tableName );
         return this;
     }
 

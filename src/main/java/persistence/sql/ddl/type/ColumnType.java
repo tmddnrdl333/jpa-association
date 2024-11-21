@@ -2,6 +2,7 @@ package persistence.sql.ddl.type;
 
 import java.sql.Types;
 import java.util.Arrays;
+import java.util.Collection;
 import persistence.exception.NotExistException;
 
 public enum ColumnType {
@@ -20,6 +21,10 @@ public enum ColumnType {
     }
 
     public static int getSqlType(Class<?> javaType) {
+        if (Collection.class.isAssignableFrom(javaType)) {
+            return Types.JAVA_OBJECT;
+        }
+
         return Arrays.stream(values())
                 .filter(type -> type.javaType == javaType)
                 .findFirst()
