@@ -24,6 +24,9 @@ public class Order {
     @JoinColumn(name = "order_id")
     private List<OrderItem> orderItems;
 
+    @OneToMany(mappedBy = "order", fetch = FetchType.LAZY)
+    private List<Review> reviews;
+
     public Order(final Long id, final String orderNumber, final List<OrderItem> orderItems) {
         this.id = id;
         this.orderNumber = orderNumber;
@@ -43,6 +46,14 @@ public class Order {
 
     public List<OrderItem> getOrderItems() {
         return orderItems;
+    }
+
+    public List<Review> getReviews() {
+        return reviews;
+    }
+
+    public void addReviews(List<Review> reviews) {
+        this.reviews = reviews;
     }
 
     @Override
