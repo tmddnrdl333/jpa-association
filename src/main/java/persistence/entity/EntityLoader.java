@@ -12,7 +12,7 @@ public class EntityLoader {
     }
 
     public Object find(Class<?> clazz, Long id) {
-        String findByIdQuery = SelectQueryBuilder.generateQuery(clazz, id);
+        String findByIdQuery = SelectQueryBuilder.generateQuery(clazz, id).build();
         return jdbcTemplate.queryForObject(findByIdQuery, new EntityRowMapper<>(clazz));
     }
 }

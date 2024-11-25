@@ -13,7 +13,7 @@ public class SelectQueryBuilderTest {
     @DisplayName("FindAll query 테스트")
     void findAllQueryTest() {
         Class<Person> personClass = Person.class;
-        String selectQuery = SelectQueryBuilder.generateQuery(personClass);
+        String selectQuery = SelectQueryBuilder.generateQuery(personClass).build();
 
         logger.debug("query : {}", selectQuery);
     }
@@ -23,7 +23,7 @@ public class SelectQueryBuilderTest {
     void findByIdTest() {
         Class<Person> personClass = Person.class;
 
-        String selectQuery = SelectQueryBuilder.generateQuery(personClass, 1L);
+        String selectQuery = SelectQueryBuilder.generateQuery(personClass, 1L).build();
 
         logger.debug("query : {}", selectQuery);
     }
