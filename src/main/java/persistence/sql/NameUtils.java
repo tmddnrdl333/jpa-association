@@ -1,6 +1,7 @@
 package persistence.sql;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
 
 import java.lang.reflect.Field;
@@ -11,6 +12,10 @@ public class NameUtils {
         if (field.isAnnotationPresent(Column.class)
                 && !"".equals(field.getAnnotation(Column.class).name())) {
             return field.getAnnotation(Column.class).name();
+        }
+        if (field.isAnnotationPresent(JoinColumn.class)
+                && !"".equals(field.getAnnotation(JoinColumn.class).name())) {
+            return field.getAnnotation(JoinColumn.class).name();
         }
         return field.getName();
     }

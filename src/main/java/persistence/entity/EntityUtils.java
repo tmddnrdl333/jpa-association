@@ -4,11 +4,24 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Transient;
+import persistence.sql.component.ColumnInfo;
+import persistence.sql.component.TableInfo;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
 
 public class EntityUtils {
+    public static ColumnInfo getIdColumn(Class<?> clazz) {
+        TableInfo tableInfo = new TableInfo(clazz);
+
+        Field[] declaredFields = clazz.getDeclaredFields();
+        Field idField = Arrays.stream(declaredFields)
+                .filter(field -> field.isAnnotationPresent(Id.class))
+                .findAny()
+                .orElseThrow();
+        return new ColumnInfo(tableInfo, idField);
+    }
+
     public static Long getIdValue(Object entity) {
         Field[] declaredFields = entity.getClass().getDeclaredFields();
         Field idField = Arrays.stream(declaredFields)
