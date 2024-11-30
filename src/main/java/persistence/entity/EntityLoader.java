@@ -16,17 +16,17 @@ public class EntityLoader {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public Object find(Class<?> clazz, Long id) {
+    public Object find(Class<?> entityClass, Long id) {
         SelectQuery selectQuery = new SelectQueryBuilder()
-                .fromTableInfo(new TableInfo(clazz))
+                .fromTableInfo(TableInfo.from(entityClass))
                 .whereCondition(
                         new ConditionBuilder()
-                                .columnInfo(EntityUtils.getIdColumn(clazz))
+                                .columnInfo(EntityUtils.getIdColumn(entityClass))
                                 .values(Collections.singletonList(id.toString()))
                                 .build()
                 )
                 .build();
         String query = selectQuery.toString();
-        return jdbcTemplate.queryForObject(query, new EntityRowMapper<>(clazz));
+        return jdbcTemplate.queryForObject(query, new EntityRowMapper<>(entityClass));
     }
 }

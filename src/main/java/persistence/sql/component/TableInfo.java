@@ -6,7 +6,11 @@ public class TableInfo {
     private Class<?> tableType;
     private String tableName;
 
-    public TableInfo(Class<?> tableType) {
+    public static TableInfo from(Class<?> tableType) {
+        return new TableInfo(tableType);
+    }
+
+    private TableInfo(Class<?> tableType) {
         this.tableType = tableType;
         this.tableName = NameUtils.getTableName(tableType);
     }

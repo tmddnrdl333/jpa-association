@@ -8,6 +8,7 @@ import persistence.sql.component.TableInfo;
 import java.util.List;
 
 public class SelectQuery {
+    private List<ColumnInfo> selectColumnInfos;
     private TableInfo fromTableInfo;
     private Condition whereCondition;
     private List<JoinCondition> joinConditions;
@@ -17,6 +18,10 @@ public class SelectQuery {
         this.whereCondition = whereCondition;
     }
 
+    public void setSelectColumnInfos(List<ColumnInfo> selectColumnInfos) {
+        this.selectColumnInfos = selectColumnInfos;
+    }
+
     public void setJoinConditions(List<JoinCondition> joinConditions) {
         this.joinConditions = joinConditions;
     }
@@ -24,9 +29,8 @@ public class SelectQuery {
     public String toString() {
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder
-                .append("select * from ")
-                .append(fromTableInfo.getTableName())
-                .append(" ");
+                .append(getSelectClause())
+                .append(getFromClause());
         if (whereCondition != null) {
             stringBuilder.append(getWhereClause());
         }
@@ -36,6 +40,34 @@ public class SelectQuery {
 
         stringBuilder.setLength(stringBuilder.length() - 1);
         stringBuilder.append(";");
+        return stringBuilder.toString();
+    }
+
+    private String getSelectClause() {
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("select ");
+
+        if (selectColumnInfos == null) {
+            stringBuilder.append("* ");
+            return stringBuilder.toString();
+        }
+
+        selectColumnInfos.forEach(
+                columnInfo -> stringBuilder
+                        .append(columnInfo.getFullName())
+                        .append(", ")
+        );
+        stringBuilder.setLength(stringBuilder.length() - 2);
+        stringBuilder.append(" ");
+        return stringBuilder.toString();
+    }
+
+    private String getFromClause() {
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder
+                .append("from ")
+                .append(fromTableInfo.getTableName())
+                .append(" ");
         return stringBuilder.toString();
     }
 

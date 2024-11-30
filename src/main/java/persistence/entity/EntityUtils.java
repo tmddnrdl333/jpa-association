@@ -12,7 +12,7 @@ import java.util.Arrays;
 
 public class EntityUtils {
     public static ColumnInfo getIdColumn(Class<?> clazz) {
-        TableInfo tableInfo = new TableInfo(clazz);
+        TableInfo tableInfo = TableInfo.from(clazz);
 
         Field[] declaredFields = clazz.getDeclaredFields();
         Field idField = Arrays.stream(declaredFields)

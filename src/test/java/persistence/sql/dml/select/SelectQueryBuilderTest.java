@@ -27,7 +27,7 @@ public class SelectQueryBuilderTest {
     void findAllQueryTest() {
         Class<Person> personClass = Person.class;
         SelectQuery selectQuery = new SelectQueryBuilder()
-                .fromTableInfo(new TableInfo(personClass))
+                .fromTableInfo(TableInfo.from(personClass))
                 .build();
         String query = selectQuery.toString();
         logger.debug(query);
@@ -39,7 +39,7 @@ public class SelectQueryBuilderTest {
     void findByIdTest() {
         Class<Person> personClass = Person.class;
         SelectQuery selectQuery = new SelectQueryBuilder()
-                .fromTableInfo(new TableInfo(personClass))
+                .fromTableInfo(TableInfo.from(personClass))
                 .whereCondition(
                         new ConditionBuilder()
                                 .columnInfo(EntityUtils.getIdColumn(personClass))
@@ -58,8 +58,8 @@ public class SelectQueryBuilderTest {
         Class<Order> orderClass = Order.class;
         Class<OrderItem> orderItemClass = OrderItem.class;
 
-        TableInfo orderTableInfo = new TableInfo(orderClass);
-        TableInfo orderItemTableInfo = new TableInfo(orderItemClass);
+        TableInfo orderTableInfo = TableInfo.from(orderClass);
+        TableInfo orderItemTableInfo = TableInfo.from(orderItemClass);
 
         ColumnInfo orderDotOrderId = new ColumnInfo(
                 orderTableInfo,
