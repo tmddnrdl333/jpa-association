@@ -49,7 +49,7 @@ public class SelectQueryBuilderTest {
                 .build();
         String query = selectQuery.toString();
         logger.debug(query);
-        assertThat(query).isEqualTo("select * from users where id = 1;");
+        assertThat(query).isEqualTo("select * from users where users.id = 1;");
     }
 
     @Test
@@ -92,6 +92,6 @@ public class SelectQueryBuilderTest {
 
         String query = selectQuery.toString();
         logger.debug(query);
-        assertThat(query).isEqualTo("select * from orders where id = 1 inner join order_items on orders.order_id = order_items.id;");
+        assertThat(query).isEqualTo("select * from orders where orders.id = 1 inner join order_items on orders.order_id = order_items.id;");
     }
 }

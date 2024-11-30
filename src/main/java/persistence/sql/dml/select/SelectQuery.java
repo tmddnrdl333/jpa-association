@@ -41,9 +41,11 @@ public class SelectQuery {
 
     private String getWhereClause() {
         StringBuilder stringBuilder = new StringBuilder();
+        ColumnInfo columnInfo = whereCondition.getColumnInfo();
+
         stringBuilder
                 .append("where ")
-                .append(whereCondition.getColumnInfo().getColumnName())
+                .append(columnInfo.getFullName())
                 .append(" ");
 
         List<String> values = whereCondition.getValues();
@@ -78,20 +80,12 @@ public class SelectQuery {
                 .append(joinCondition.getTableInfo().getTableName())
                 .append(" on ");
         ColumnInfo sourceColumnInfo = joinCondition.getSourceColumnInfo();
-        String sourceTableName = sourceColumnInfo.getTableInfo().getTableName();
-        String sourceColumnName = sourceColumnInfo.getColumnName();
         stringBuilder
-                .append(sourceTableName)
-                .append(".")
-                .append(sourceColumnName)
+                .append(sourceColumnInfo.getFullName())
                 .append(" = ");
         ColumnInfo targetColumnInfo = joinCondition.getTargetColumnInfo();
-        String targetTableName = targetColumnInfo.getTableInfo().getTableName();
-        String targetColumnName = targetColumnInfo.getColumnName();
         stringBuilder
-                .append(targetTableName)
-                .append(".")
-                .append(targetColumnName)
+                .append(targetColumnInfo.getFullName())
                 .append(" ");
         return stringBuilder.toString();
     }
