@@ -77,21 +77,21 @@ public class SelectQuery {
                 .append(" ")
                 .append(joinCondition.getTableInfo().getTableName())
                 .append(" on ");
-        ColumnInfo onConditionColumn1 = joinCondition.getOnConditionColumn1();
-        String table1Name = onConditionColumn1.getTableInfo().getTableName();
-        String column1Name = onConditionColumn1.getColumnName();
+        ColumnInfo sourceColumnInfo = joinCondition.getSourceColumnInfo();
+        String sourceTableName = sourceColumnInfo.getTableInfo().getTableName();
+        String sourceColumnName = sourceColumnInfo.getColumnName();
         stringBuilder
-                .append(table1Name)
+                .append(sourceTableName)
                 .append(".")
-                .append(column1Name)
+                .append(sourceColumnName)
                 .append(" = ");
-        ColumnInfo onConditionColumn2 = joinCondition.getOnConditionColumn2();
-        String table2Name = onConditionColumn2.getTableInfo().getTableName();
-        String column2Name = onConditionColumn2.getColumnName();
+        ColumnInfo targetColumnInfo = joinCondition.getTargetColumnInfo();
+        String targetTableName = targetColumnInfo.getTableInfo().getTableName();
+        String targetColumnName = targetColumnInfo.getColumnName();
         stringBuilder
-                .append(table2Name)
+                .append(targetTableName)
                 .append(".")
-                .append(column2Name)
+                .append(targetColumnName)
                 .append(" ");
         return stringBuilder.toString();
     }

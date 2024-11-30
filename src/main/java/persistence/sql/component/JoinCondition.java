@@ -3,8 +3,8 @@ package persistence.sql.component;
 public class JoinCondition {
     private JoinType joinType;
     private TableInfo tableInfo;
-    private ColumnInfo onConditionColumn1;
-    private ColumnInfo onConditionColumn2;
+    private ColumnInfo sourceColumnInfo;
+    private ColumnInfo targetColumnInfo;
 
     public JoinType getJoinType() {
         return joinType;
@@ -14,18 +14,18 @@ public class JoinCondition {
         return tableInfo;
     }
 
-    public ColumnInfo getOnConditionColumn1() {
-        return onConditionColumn1;
+    public ColumnInfo getSourceColumnInfo() {
+        return sourceColumnInfo;
     }
 
-    public ColumnInfo getOnConditionColumn2() {
-        return onConditionColumn2;
+    public ColumnInfo getTargetColumnInfo() {
+        return targetColumnInfo;
     }
 
     public JoinCondition(JoinType joinType, TableInfo tableInfo, ColumnInfo onConditionColumn1, ColumnInfo onConditionColumn2) {
         this.joinType = joinType;
         this.tableInfo = tableInfo;
-        this.onConditionColumn1 = onConditionColumn1;
-        this.onConditionColumn2 = onConditionColumn2;
+        this.sourceColumnInfo = onConditionColumn1;
+        this.targetColumnInfo = onConditionColumn2;
     }
 }

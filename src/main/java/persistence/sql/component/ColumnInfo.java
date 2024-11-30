@@ -19,10 +19,6 @@ public class ColumnInfo {
         return tableInfo;
     }
 
-    public Class<?> getColumnType() {
-        return columnType;
-    }
-
     public String getColumnName() {
         return columnName;
     }
