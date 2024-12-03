@@ -9,11 +9,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import persistence.sql.component.ColumnInfo;
 import persistence.sql.component.ConditionBuilder;
+import persistence.sql.component.JoinCondition;
 import persistence.sql.component.JoinConditionBuilder;
+import persistence.sql.component.JoinInfo;
 import persistence.sql.component.JoinType;
 import persistence.sql.component.TableInfo;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -60,34 +64,35 @@ public class SelectQueryBuilderTest {
         Class<OrderItem> orderItemClass = OrderItem.class;
 
         TableInfo orderTableInfo = TableInfo.from(orderClass);
-        TableInfo orderItemTableInfo = TableInfo.from(orderItemClass);
+
+        List<JoinCondition> joinConditions = new ArrayList<>();
+
+        List<JoinInfo> joinInfos = orderTableInfo.getJoinInfos();
+        for (JoinInfo joinInfo : joinInfos) {
+            JoinCondition joinCondition = new JoinConditionBuilder()
+                    .joinType(JoinType.LEFT_JOIN)
+                    .tableInfo(joinInfo.getTargetColumnInfo().getTableInfo())
+                    .sourceColumnInfo(joinInfo.getSourceColumnInfo())
+                    .targetColumnInfo(joinInfo.getTargetColumnInfo())
+                    .build();
+            joinConditions.add(joinCondition);
+        }
 
         ColumnInfo orderId = orderTableInfo.getIdColumn();
-        ColumnInfo orderOrderId = orderTableInfo.getColumn("order_id");
-        ColumnInfo orderItemId = orderItemTableInfo.getIdColumn();
 
         SelectQuery selectQuery = new SelectQueryBuilder()
                 .fromTableInfo(orderTableInfo)
+                .joinConditions(joinConditions)
                 .whereCondition(
                         new ConditionBuilder()
                                 .columnInfo(orderId)
                                 .values(Collections.singletonList("1"))
                                 .build()
                 )
-                .joinConditions(
-                        Collections.singletonList(
-                                new JoinConditionBuilder()
-                                        .joinType(JoinType.INNER_JOIN)
-                                        .tableInfo(orderItemTableInfo)
-                                        .sourceColumnInfo(orderOrderId)
-                                        .targetColumnInfo(orderItemId)
-                                        .build()
-                        )
-                )
                 .build();
 
         String query = selectQuery.toString();
         logger.debug(query);
-        assertThat(query).isEqualTo("select * from orders where orders.id = 1 inner join order_items on orders.order_id = order_items.id;");
+        assertThat(query).isEqualTo("select * from orders left join order_items on orders.id = order_items.order_id where orders.id = 1;");
     }
 }

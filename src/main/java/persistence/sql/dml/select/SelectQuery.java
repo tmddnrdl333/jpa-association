@@ -31,11 +31,11 @@ public class SelectQuery {
         stringBuilder
                 .append(getSelectClause())
                 .append(getFromClause());
-        if (whereCondition != null) {
-            stringBuilder.append(getWhereClause());
-        }
         if (joinConditions != null) {
             stringBuilder.append(getJoinClauses());
+        }
+        if (whereCondition != null) {
+            stringBuilder.append(getWhereClause());
         }
 
         stringBuilder.setLength(stringBuilder.length() - 1);

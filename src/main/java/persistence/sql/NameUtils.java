@@ -13,10 +13,6 @@ public class NameUtils {
                 && !"".equals(field.getAnnotation(Column.class).name())) {
             return field.getAnnotation(Column.class).name();
         }
-        if (field.isAnnotationPresent(JoinColumn.class)
-                && !"".equals(field.getAnnotation(JoinColumn.class).name())) {
-            return field.getAnnotation(JoinColumn.class).name();
-        }
         return field.getName();
     }
 

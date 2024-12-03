@@ -35,11 +35,11 @@ public class SelectQueryBuilder {
 
     public SelectQuery build() {
         SelectQuery selectQuery = new SelectQuery(fromTableInfo, whereCondition);
-        if (selectColumnInfos != null) {
-            selectQuery.setSelectColumnInfos(selectColumnInfos);
-        }
         if (joinConditions != null) {
             selectQuery.setJoinConditions(joinConditions);
+        }
+        if (selectColumnInfos != null) {
+            selectQuery.setSelectColumnInfos(selectColumnInfos);
         }
         return selectQuery;
     }

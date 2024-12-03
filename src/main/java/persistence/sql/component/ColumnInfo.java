@@ -6,11 +6,11 @@ import java.lang.reflect.Field;
 
 public class ColumnInfo {
     private TableInfo tableInfo;
-    private String columnName;
+    private Field columnField;
 
     private ColumnInfo(TableInfo tableInfo, Field field) {
         this.tableInfo = tableInfo;
-        this.columnName = NameUtils.getColumnName(field);
+        this.columnField = field;
     }
 
     public static ColumnInfo of(TableInfo tableInfo, Field columnField) {
@@ -21,11 +21,11 @@ public class ColumnInfo {
         return tableInfo;
     }
 
-    public String getColumnName() {
-        return columnName;
+    public Field getColumnField() {
+        return columnField;
     }
 
     public String getFullName() {
-        return tableInfo.getTableName() + "." + columnName;
+        return tableInfo.getTableName() + "." + NameUtils.getColumnName(columnField);
     }
 }
