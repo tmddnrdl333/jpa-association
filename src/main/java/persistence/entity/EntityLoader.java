@@ -2,6 +2,7 @@ package persistence.entity;
 
 import jdbc.EntityRowMapper;
 import jdbc.JdbcTemplate;
+import persistence.sql.component.ColumnInfo;
 import persistence.sql.component.ConditionBuilder;
 import persistence.sql.component.TableInfo;
 import persistence.sql.dml.select.SelectQuery;
@@ -17,11 +18,14 @@ public class EntityLoader {
     }
 
     public Object find(Class<?> entityClass, Long id) {
+        TableInfo fromTable = TableInfo.from(entityClass);
+        ColumnInfo idColumn = fromTable.getIdColumn();
+
         SelectQuery selectQuery = new SelectQueryBuilder()
-                .fromTableInfo(TableInfo.from(entityClass))
+                .fromTableInfo(fromTable)
                 .whereCondition(
                         new ConditionBuilder()
-                                .columnInfo(EntityUtils.getIdColumn(entityClass))
+                                .columnInfo(idColumn)
                                 .values(Collections.singletonList(id.toString()))
                                 .build()
                 )

@@ -7,14 +7,12 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import persistence.entity.EntityUtils;
 import persistence.sql.component.ColumnInfo;
 import persistence.sql.component.ConditionBuilder;
 import persistence.sql.component.JoinConditionBuilder;
 import persistence.sql.component.JoinType;
 import persistence.sql.component.TableInfo;
 
-import java.util.Arrays;
 import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,11 +36,14 @@ public class SelectQueryBuilderTest {
     @DisplayName("FindById query 테스트")
     void findByIdTest() {
         Class<Person> personClass = Person.class;
+        TableInfo personTable = TableInfo.from(personClass);
+        ColumnInfo idColumn = personTable.getIdColumn();
+
         SelectQuery selectQuery = new SelectQueryBuilder()
-                .fromTableInfo(TableInfo.from(personClass))
+                .fromTableInfo(personTable)
                 .whereCondition(
                         new ConditionBuilder()
-                                .columnInfo(EntityUtils.getIdColumn(personClass))
+                                .columnInfo(idColumn)
                                 .values(Collections.singletonList("1"))
                                 .build()
                 )
@@ -61,20 +62,15 @@ public class SelectQueryBuilderTest {
         TableInfo orderTableInfo = TableInfo.from(orderClass);
         TableInfo orderItemTableInfo = TableInfo.from(orderItemClass);
 
-        ColumnInfo orderDotOrderId = new ColumnInfo(
-                orderTableInfo,
-                Arrays.stream(orderClass.getDeclaredFields())
-                        .filter(field -> field.getName().equals("orderItems"))
-                        .findAny()
-                        .get()
-        );
-        ColumnInfo orderItemDotId = EntityUtils.getIdColumn(orderItemClass);
+        ColumnInfo orderId = orderTableInfo.getIdColumn();
+        ColumnInfo orderOrderId = orderTableInfo.getColumn("order_id");
+        ColumnInfo orderItemId = orderItemTableInfo.getIdColumn();
 
         SelectQuery selectQuery = new SelectQueryBuilder()
                 .fromTableInfo(orderTableInfo)
                 .whereCondition(
                         new ConditionBuilder()
-                                .columnInfo(EntityUtils.getIdColumn(orderClass))
+                                .columnInfo(orderId)
                                 .values(Collections.singletonList("1"))
                                 .build()
                 )
@@ -83,8 +79,8 @@ public class SelectQueryBuilderTest {
                                 new JoinConditionBuilder()
                                         .joinType(JoinType.INNER_JOIN)
                                         .tableInfo(orderItemTableInfo)
-                                        .onConditionColumn1(orderDotOrderId)
-                                        .onConditionColumn2(orderItemDotId)
+                                        .sourceColumnInfo(orderOrderId)
+                                        .targetColumnInfo(orderItemId)
                                         .build()
                         )
                 )

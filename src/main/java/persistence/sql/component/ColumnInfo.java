@@ -8,9 +8,13 @@ public class ColumnInfo {
     private TableInfo tableInfo;
     private String columnName;
 
-    public ColumnInfo(TableInfo tableInfo, Field field) {
+    private ColumnInfo(TableInfo tableInfo, Field field) {
         this.tableInfo = tableInfo;
         this.columnName = NameUtils.getColumnName(field);
+    }
+
+    public static ColumnInfo of(TableInfo tableInfo, Field columnField) {
+        return new ColumnInfo(tableInfo, columnField);
     }
 
     public TableInfo getTableInfo() {
